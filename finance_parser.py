@@ -50,7 +50,7 @@ def rename_columns(df: pd.DataFrame):
   # will be needed with possible values of "income" or "expense"
   df.rename(
     columns= {
-      "lp.": "index",
+      "lp.": "idx",
       "full_date": "date",
       "nazwa": "description",
       "wartość": "amount",
@@ -59,8 +59,8 @@ def rename_columns(df: pd.DataFrame):
       "rodzaj_operacji": "payment_method",
       "konto": "account",
       "kurs_wymiany": "exchange_rate",
-      "waluty": "currencies", # currencies order for exchange_rate
-      "ref_lp": "ref_index"
+      "waluty": "currencies", # currencies for exchange_rate
+      "ref_lp": "ref_idx"
     },
     inplace=True
   )
