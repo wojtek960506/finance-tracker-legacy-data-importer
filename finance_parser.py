@@ -4,13 +4,20 @@ import sys
 from typing import Union
 
 
-def get_full_date(df: pd.DataFrame, year: int):
+def get_full_date(df: pd.DataFrame, year: int = None):
   
-  df["full_date"] = pd.to_datetime(
-    df.assign(year=year).loc[:, ["year", "m.", "d."]]
-      .rename(columns={"m.": "month", "d.": "day"})
-  )
-  df.drop(columns=["m.", "d."], inplace=True)
+  if year is None:
+    df["full_date"] = pd.to_datetime(
+      df.loc[:, ["r.", "m.", "d."]]
+        .rename(columns={"r.": "year", "m.": "month", "d.": "day"})
+    )
+  else:
+    df["full_date"] = pd.to_datetime(
+      df.assign(year=year ).loc[:, ["year", "m.", "d."]]
+        .rename(columns={"m.": "month", "d.": "day"})
+    )
+
+  df.drop(columns=["r.", "m.", "d."], inplace=True, errors="ignore")
   columns = list(df.columns)
   columns.remove("full_date")
   columns.insert(1, "full_date")
@@ -18,6 +25,9 @@ def get_full_date(df: pd.DataFrame, year: int):
   return df
 
 def parse_number(x: Union[int, float, str], to_int: bool):
+  if pd.isna(x):
+    return x
+
   if isinstance(x, str):
     x = x.replace('\xa0', '') # remove non-breaking space
     x = x.replace(' ', '')    # remove regular spaces
@@ -28,17 +38,23 @@ def parse_number(x: Union[int, float, str], to_int: bool):
 def clean_numbers(df: pd.DataFrame):
   df['lp.'] = df['lp.'].apply(lambda x: parse_number(x, True))
   df['wartość'] = df['wartość'].apply(lambda x: parse_number(x, False))
+  try:
+    df['kurs_wymiany'] = df['kurs_wymiany'].apply(lambda x: parse_number(x, False))
+    print('g')
+    # because there are some NaN values in this column the whole column is cast to 'float'
+    df['ref_lp'] = df['ref_lp'].apply(lambda x: parse_number(x, True))
+  except:
+    pass
 
 
-def parse_finance_spreadsheet(year: int):
-  # Paths
-  DATA_DIR = Path(__file__).resolve().parents[0] / "data" / f"{year}"
-  RAW_FILE = DATA_DIR / f"finance_raw_{year}.csv"
-  EXPENSES_FILE = DATA_DIR / f"finance_expenses_{year}.csv"
-  INCOMES_FILE = DATA_DIR / f"finance_incomes_{year}.csv"
-
+def parse_finance_spreadsheet(
+  raw_file: Path,
+  expenses_file: Path,
+  incomes_file: Path,
+  year: int = None
+):
   # load CSV (first 2 rows don't have meaningful data)
-  df = pd.read_csv(RAW_FILE, skiprows=2)
+  df = pd.read_csv(raw_file, skiprows=2)
 
   # drop all columns whose name starts with (Unnamed) - those are empty columns
   # both of the lines below have the same effect (keep them just for learning purposes)
@@ -69,8 +85,8 @@ def parse_finance_spreadsheet(year: int):
   df_expenses = get_full_date(df_expenses, year)
   df_incomes = get_full_date(df_incomes, year)
 
-  print("expenses", df_expenses.columns)
-  print("incomes", df_incomes.columns)
+  print('*'*100)
+  print("Year:", year)
   print(f"Loaded {len(df_expenses)} of expenses rows")
   print(f"Loaded {len(df_incomes)} of incomes rows")
 
@@ -79,13 +95,31 @@ def parse_finance_spreadsheet(year: int):
   clean_numbers(df_incomes)
 
   # save prepared data frames to separate CSV files
-  df_expenses.to_csv(EXPENSES_FILE, index=False, encoding="utf-8")
-  df_incomes.to_csv(INCOMES_FILE, index=False, encoding="utf-8")
+  df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
+  df_incomes.to_csv(incomes_file, index=False, encoding="utf-8")
 
+def main():
+  if len(sys.argv) > 1:
+    years = [sys.argv[1]]
+    print(f"Year passed: {sys.argv[1]}")
+  else:
+    years = list(range(2015,2025))
+    
+  # parse transactions in PLN
+  for year in years:
+    DATA_DIR = Path(__file__).resolve().parents[0] / "data" / f"{year}"
+    RAW_FILE = DATA_DIR / f"finance_raw_{year}.csv"
+    EXPENSES_FILE = DATA_DIR / f"finance_expenses_{year}.csv"
+    INCOMES_FILE = DATA_DIR / f"finance_incomes_{year}.csv"
+    
+    parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE, year)
 
-if len(sys.argv) > 1:
-  YEAR = sys.argv[1]
-  print(f"Year passed: {YEAR}")
-  parse_finance_spreadsheet(YEAR)
-else:
-  raise Exception("Year not specified in arguments")
+  # parse foreign transactions
+  DATA_DIR = Path(__file__).resolve().parents[0] / "data" / "foreign_transactions"
+  RAW_FILE = DATA_DIR / "foreign_finance_raw_2015_2024.csv"
+  EXPENSES_FILE = DATA_DIR / "foreign_finance_expenses_2015_2024.csv"
+  INCOMES_FILE = DATA_DIR / "foreign_finance_incomes_2015_2024.csv"
+  parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE)
+  
+if __name__ == "__main__":
+  main()
