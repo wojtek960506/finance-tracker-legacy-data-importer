@@ -40,12 +40,30 @@ def clean_numbers(df: pd.DataFrame):
   df['wartość'] = df['wartość'].apply(lambda x: parse_number(x, False))
   try:
     df['kurs_wymiany'] = df['kurs_wymiany'].apply(lambda x: parse_number(x, False))
-    print('g')
     # because there are some NaN values in this column the whole column is cast to 'float'
     df['ref_lp'] = df['ref_lp'].apply(lambda x: parse_number(x, True))
   except:
     pass
 
+def rename_columns(df: pd.DataFrame):
+  # later in the final csv file additional column `transactionType`
+  # will be needed with possible values of "income" or "expense"
+  df.rename(
+    columns= {
+      "lp.": "index",
+      "full_date": "date",
+      "nazwa": "description",
+      "wartość": "amount",
+      "waluta": "currency",
+      "kategoria": "category",
+      "rodzaj_operacji": "payment_method",
+      "konto": "account",
+      "kurs_wymiany": "exchange_rate",
+      "waluty": "currencies", # currencies order for exchange_rate
+      "ref_lp": "ref_index"
+    },
+    inplace=True
+  )
 
 def parse_finance_spreadsheet(
   raw_file: Path,
@@ -93,6 +111,11 @@ def parse_finance_spreadsheet(
   # clean numbers as they can have some spaces from formatting and commas instead of dots
   clean_numbers(df_expenses)
   clean_numbers(df_incomes)
+
+  # rename columns to be in english and match Transaction schema from Node.js server
+  # here columns are in snake_case and in Node.js server are in camelCase
+  rename_columns(df_expenses)
+  rename_columns(df_incomes)
 
   # save prepared data frames to separate CSV files
   df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
