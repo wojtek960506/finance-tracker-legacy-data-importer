@@ -8,9 +8,6 @@ INCOMES_FILE = DATA_DIR / "foreign_finance_incomes_2015_2024.csv"
 df_incomes = pd.read_csv(INCOMES_FILE)
 df_expenses = pd.read_csv(EXPENSES_FILE)
 
-df_incomes['calc_ref_idx'] = -1
-df_expenses['calc_ref_idx'] = -1
-
 # Two pointer logic
 index_incomes, index_expenses, num_of_refs = 0, 0, 0
 
@@ -25,19 +22,30 @@ while index_incomes < len(df_incomes) and index_expenses < len(df_expenses):
   date_e = expense_row["date"]
   exchange_rate_e = expense_row["exchange_rate"]
   currencies_e = expense_row["currencies"]
+  currency_e = expense_row["currency"]
+  amount_e = expense_row["amount"]
 
   idx_i = income_row["idx"]
   date_i = income_row["date"]
   exchange_rate_i = income_row["exchange_rate"]
   currencies_i = income_row["currencies"]
-
-  # TODO maybe add a check if currencies are properly specified
+  currency_i = income_row["currency"]
+  amount_i = income_row["amount"]
 
   if (
     date_i == date_e and
     currencies_i == currencies_e and
     exchange_rate_i == exchange_rate_e
   ):
+    if (
+      (amount_e > amount_i and currencies_e != f"{currency_i}/{currency_e}") or
+      (amount_i > amount_e and currencies_e != f"{currency_e}/{currency_i}")
+    ):
+      print(idx_e)
+      print(idx_i)
+      raise Exception("wrong 'currencies' value")
+    
+    
     df_incomes.at[index_incomes, "calc_ref_idx"] = idx_e
     df_expenses.at[index_expenses, "calc_ref_idx"] = idx_i 
 
