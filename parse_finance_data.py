@@ -1,7 +1,6 @@
 import pandas as pd
 from pathlib import Path
-import sys
-from typing import Union
+from typing import List, Union
 
 
 def get_full_date(df: pd.DataFrame, year: int = None):
@@ -46,8 +45,6 @@ def clean_numbers(df: pd.DataFrame):
     pass
 
 def rename_columns(df: pd.DataFrame):
-  # later in the final csv file additional column `transactionType`
-  # will be needed with possible values of "income" or "expense"
   df.rename(
     columns= {
       "lp.": "idx",
@@ -64,6 +61,38 @@ def rename_columns(df: pd.DataFrame):
     inplace=True
   )
 
+def add_missing_columns(df: pd.DataFrame, transaction_type: str):
+  if not "exchange_rate" in df.columns:
+    df["exchange_rate"] = pd.NA
+  if not "currencies" in df.columns:
+    df["currencies"] = pd.NA
+  
+  df["calc_ref_idx"] = -1
+  df["transaction_type"] = transaction_type
+
+
+def drop_unnecessary_columns(df: pd.DataFrame):
+  # drop all columns whose name starts with (Unnamed) - those are empty columns
+  df.drop(columns=[col for col in df.columns if col.startswith("Unnamed")], inplace=True)
+
+  # drop all columns which are some additional data calculated based on incomes and expenses
+  df.drop(
+    columns=[
+      col for col in df.columns 
+      if (col.startswith("Ilość") or col.startswith("ile") or
+          col[-1] in ["2", "3", "4", "5", "6", "7"])
+    ],
+    inplace=True
+  )
+
+
+def print_info(year: str, df_expenses: pd.DataFrame, df_incomes: pd.DataFrame):
+  print('*'*100)
+  print("Year:", year)
+  print(f"Loaded {len(df_expenses)} of expenses rows")
+  print(f"Loaded {len(df_incomes)} of incomes rows")
+
+
 def parse_finance_spreadsheet(
   raw_file: Path,
   expenses_file: Path,
@@ -73,17 +102,7 @@ def parse_finance_spreadsheet(
   # load CSV (first 2 rows don't have meaningful data)
   df = pd.read_csv(raw_file, skiprows=2)
 
-  # drop all columns whose name starts with (Unnamed) - those are empty columns
-  # both of the lines below have the same effect (keep them just for learning purposes)
-
-  # df = df.loc[:, ~df.columns.str.startswith("Unnamed")]
-  df.drop(columns=[col for col in df.columns if col.startswith("Unnamed")], inplace=True)
-
-  # drop all columns which are some additional data calculated based on incomes and expenses
-  df.drop(columns=[
-    col for col in df.columns 
-    if col.startswith("Ilość") or col.startswith("ile") or col[-1] in ["2", "3", "4", "5", "6", "7"]
-  ], inplace=True)
+  drop_unnecessary_columns(df)
 
   # split data to expenses and incomes
   df_expenses = df[[col for col in df.columns if not col.endswith(".1")]]
@@ -102,11 +121,6 @@ def parse_finance_spreadsheet(
   df_expenses = get_full_date(df_expenses, year)
   df_incomes = get_full_date(df_incomes, year)
 
-  print('*'*100)
-  print("Year:", year)
-  print(f"Loaded {len(df_expenses)} of expenses rows")
-  print(f"Loaded {len(df_incomes)} of incomes rows")
-
   # clean numbers as they can have some spaces from formatting and commas instead of dots
   clean_numbers(df_expenses)
   clean_numbers(df_incomes)
@@ -116,47 +130,30 @@ def parse_finance_spreadsheet(
   rename_columns(df_expenses)
   rename_columns(df_incomes)
 
-  if not "exchange_rate" in df_expenses.columns:
-    df_expenses["exchange_rate"] = pd.NA
-  if not "exchange_rate" in df_incomes.columns:
-    df_incomes["exchange_rate"] = pd.NA
-  if not "currencies" in df_expenses.columns:
-    df_expenses["currencies"] = pd.NA
-  if not "currencies" in df_incomes.columns:
-    df_incomes["currencies"] = pd.NA
-
-  df_expenses["calc_ref_idx"] = -1
-  df_incomes["calc_ref_idx"] = -1
-
-  df_expenses["transaction_type"] = "expense"
-  df_incomes["transaction_type"] = "income"
+  # add columns for all files to match the schema
+  add_missing_columns(df_expenses, "expense")
+  add_missing_columns(df_incomes, "income")
 
   # save prepared data frames to separate CSV files
   df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
   df_incomes.to_csv(incomes_file, index=False, encoding="utf-8")
 
-def main():
-  if len(sys.argv) > 1:
-    years = [sys.argv[1]]
-    print(f"Year passed: {sys.argv[1]}")
-  else:
-    years = list(range(2015,2025))
-    
-  # parse transactions in PLN
-  for year in years:
-    DATA_DIR = Path(__file__).resolve().parents[0] / "data" / f"{year}"
-    RAW_FILE = DATA_DIR / f"finance_raw_{year}.csv"
-    EXPENSES_FILE = DATA_DIR / f"finance_expenses_{year}.csv"
-    INCOMES_FILE = DATA_DIR / f"finance_incomes_{year}.csv"
-    
+  print_info(year, df_expenses, df_incomes)
+
+
+def parse_finance_data():
+  names: List[Union[int, str]] = list(range(2015,2025))
+  names.append("2015_2024_foreign")
+  
+  for name in names:
+    DATA_DIR = Path(__file__).resolve().parents[0] / "data" / f"{name}"
+    RAW_FILE = DATA_DIR / f"finance_raw_{name}.csv"
+    EXPENSES_FILE = DATA_DIR / f"finance_expenses_{name}.csv"
+    INCOMES_FILE = DATA_DIR / f"finance_incomes_{name}.csv"
+
+    year = name if isinstance(name, int) else None
     parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE, year)
 
-  # parse foreign transactions
-  DATA_DIR = Path(__file__).resolve().parents[0] / "data" / "foreign_transactions"
-  RAW_FILE = DATA_DIR / "foreign_finance_raw_2015_2024.csv"
-  EXPENSES_FILE = DATA_DIR / "foreign_finance_expenses_2015_2024.csv"
-  INCOMES_FILE = DATA_DIR / "foreign_finance_incomes_2015_2024.csv"
-  parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE)
   
 if __name__ == "__main__":
-  main()
+  parse_finance_data()
