@@ -60,7 +60,6 @@ def rename_columns(df: pd.DataFrame):
       "konto": "account",
       "kurs_wymiany": "exchange_rate",
       "waluty": "currencies", # currencies for exchange_rate
-      "ref_lp": "ref_idx"
     },
     inplace=True
   )
@@ -116,6 +115,21 @@ def parse_finance_spreadsheet(
   # here columns are in snake_case and in Node.js server are in camelCase
   rename_columns(df_expenses)
   rename_columns(df_incomes)
+
+  if not "exchange_rate" in df_expenses.columns:
+    df_expenses["exchange_rate"] = pd.NA
+  if not "exchange_rate" in df_incomes.columns:
+    df_incomes["exchange_rate"] = pd.NA
+  if not "currencies" in df_expenses.columns:
+    df_expenses["currencies"] = pd.NA
+  if not "currencies" in df_incomes.columns:
+    df_incomes["currencies"] = pd.NA
+
+  df_expenses["calc_ref_idx"] = -1
+  df_incomes["calc_ref_idx"] = -1
+
+  df_expenses["transaction_type"] = "expense"
+  df_incomes["transaction_type"] = "income"
 
   # save prepared data frames to separate CSV files
   df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
