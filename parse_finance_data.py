@@ -134,6 +134,10 @@ def parse_finance_spreadsheet(
   add_missing_columns(df_expenses, "expense")
   add_missing_columns(df_incomes, "income")
 
+  if year is not None:
+    df_expenses.insert(loc=4, column="currency", value="PLN")
+    df_incomes.insert(loc=4, column="currency", value="PLN")
+
   # save prepared data frames to separate CSV files
   df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
   df_incomes.to_csv(incomes_file, index=False, encoding="utf-8")
