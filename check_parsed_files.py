@@ -6,10 +6,7 @@ from typing import List, Union, Dict, Set
 def check_columns(df: pd.DataFrame, columns: List[str], file_path):
   df_columns = list(df.columns)
 
-
-
-
-  # check if columns in all files with finance data are the same
+  # check if columns in all files are the same
   if len(columns) == 0:
     columns = df_columns
   elif columns != df_columns:
@@ -20,12 +17,11 @@ def check_columns(df: pd.DataFrame, columns: List[str], file_path):
   
   return columns
 
-def check_values(df: pd.DataFrame, columns_values: Dict[str, Set[set]]):
+def get_values_for_selectors(df: pd.DataFrame, columns_values: Dict[str, Set[set]]):
   for column_name, value in columns_values.items():
     value.update(df[column_name].dropna().unique())
 
   return columns_values
-
 
 def check_parsed_files():
   
@@ -52,10 +48,9 @@ def check_parsed_files():
     columns = check_columns(df_expenses, columns, EXPENSES_FILE)
     columns = check_columns(df_incomes, columns, INCOMES_FILE)
 
-    columns_values = check_values(df_expenses, columns_values)
-    columns_values = check_values(df_incomes, columns_values)
+    columns_values = get_values_for_selectors(df_expenses, columns_values)
+    columns_values = get_values_for_selectors(df_incomes, columns_values)
 
-  
   print('All good with column names')
   for column_name, values in columns_values.items():
     print(f"{column_name} - {values}")
