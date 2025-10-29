@@ -1,6 +1,5 @@
 import subprocess
 from pathlib import Path
-from typing import List, Union
 
 
 def execute_copying(path_1, path_2):
@@ -20,7 +19,7 @@ def copy_original_finance_spreadsheet(name):
 
 
 def copy_finance_data():
-  names: List[Union[int, str]] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2025))
   names.append("2015_2024_foreign")
 
   for name in names:

@@ -1,9 +1,9 @@
 import pandas as pd
 from pathlib import Path
-from typing import List, Union
+
 
 def combine_finance_data():
-  names: List[Union[int, str]] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2025))
   names.append("2015_2024_foreign")
 
   frames_all = []

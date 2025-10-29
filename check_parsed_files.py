@@ -1,9 +1,8 @@
 import pandas as pd
 from pathlib import Path
-from typing import List, Union, Dict, Set
 
 
-def check_columns(df: pd.DataFrame, columns: List[str], file_path):
+def check_columns(df: pd.DataFrame, columns: list[str], file_path):
   df_columns = list(df.columns)
 
   # check if columns in all files are the same
@@ -17,7 +16,7 @@ def check_columns(df: pd.DataFrame, columns: List[str], file_path):
   
   return columns
 
-def get_values_for_selectors(df: pd.DataFrame, columns_values: Dict[str, Set[set]]):
+def get_values_for_selectors(df: pd.DataFrame, columns_values: dict[str, set[str]]):
   for column_name, value in columns_values.items():
     value.update(df[column_name].dropna().unique())
 
@@ -25,8 +24,8 @@ def get_values_for_selectors(df: pd.DataFrame, columns_values: Dict[str, Set[set
 
 def check_parsed_files():
   
-  columns: List[str] = []
-  columns_values: Dict[str, Set[str]] = {
+  columns: list[str] = []
+  columns_values: dict[str, set[str]] = {
     "currency": set(),
     "category": set(),
     "payment_method": set(),
@@ -35,7 +34,7 @@ def check_parsed_files():
     "transaction_type": set(),
   }
 
-  names: List[Union[int, str]] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2025))
   names.append("2015_2024_foreign")
 
   for name in names:

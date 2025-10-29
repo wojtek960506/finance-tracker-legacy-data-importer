@@ -1,6 +1,5 @@
 import pandas as pd
 from pathlib import Path
-from typing import List, Union
 
 
 def get_full_date(df: pd.DataFrame, year: int = None):
@@ -23,7 +22,7 @@ def get_full_date(df: pd.DataFrame, year: int = None):
   df = df[columns]
   return df
 
-def parse_number(x: Union[int, float, str], to_int: bool):
+def parse_number(x: int | float | str, to_int: bool):
   if pd.isna(x):
     return x
 
@@ -146,7 +145,7 @@ def parse_finance_spreadsheet(
 
 
 def parse_finance_data():
-  names: List[Union[int, str]] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2025))
   names.append("2015_2024_foreign")
   
   for name in names:
