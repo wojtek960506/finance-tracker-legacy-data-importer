@@ -1,19 +1,12 @@
 import pandas as pd
 from pathlib import Path
-from typing import List, Union
+from typing import List, Union, Dict, Set
 
 
-def check_parsed_file(file_path: Path, columns: List[str]):
-  df = pd.read_csv(file_path)
+def check_columns(df: pd.DataFrame, columns: List[str], file_path):
   df_columns = list(df.columns)
 
-  # TODO - check what are the sets of values for:
-  #   * currency
-  #   * category
-  #   * payment_method
-  #   * account
-  #   * currencies
-  #   * transaction_type  
+
 
 
   # check if columns in all files with finance data are the same
@@ -27,21 +20,45 @@ def check_parsed_file(file_path: Path, columns: List[str]):
   
   return columns
 
+def check_values(df: pd.DataFrame, columns_values: Dict[str, Set[set]]):
+  for column_name, value in columns_values.items():
+    value.update(df[column_name].dropna().unique())
+
+  return columns_values
+
+
 def check_parsed_files():
+  
+  columns: List[str] = []
+  columns_values: Dict[str, Set[str]] = {
+    "currency": set(),
+    "category": set(),
+    "payment_method": set(),
+    "account": set(),
+    "currencies": set(),
+    "transaction_type": set(),
+  }
+
   names: List[Union[int, str]] = list(range(2015,2025))
   names.append("2015_2024_foreign")
-  
-  columns = []
+
   for name in names:
     DATA_DIR = Path(__file__).resolve().parents[0] / "data" / f"{name}"
     EXPENSES_FILE = DATA_DIR / f"finance_expenses_{name}.csv"
     INCOMES_FILE = DATA_DIR / f"finance_incomes_{name}.csv"
+    df_expenses = pd.read_csv(EXPENSES_FILE)
+    df_incomes = pd.read_csv(INCOMES_FILE)
 
-    columns = check_parsed_file(EXPENSES_FILE, columns)
-    columns = check_parsed_file(INCOMES_FILE, columns)
+    columns = check_columns(df_expenses, columns, EXPENSES_FILE)
+    columns = check_columns(df_incomes, columns, INCOMES_FILE)
+
+    columns_values = check_values(df_expenses, columns_values)
+    columns_values = check_values(df_incomes, columns_values)
 
   
-  print('All good')
+  print('All good with column names')
+  for column_name, values in columns_values.items():
+    print(f"{column_name} - {values}")
 
 
 if __name__ == "__main__":
