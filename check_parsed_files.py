@@ -22,7 +22,7 @@ def get_values_for_selectors(df: pd.DataFrame, columns_values: dict[str, set[str
 
   return columns_values
 
-def check_parsed_files():
+def check_parsed_files(should_print=False):
   
   columns: list[str] = []
   columns_values: dict[str, set[str]] = {
@@ -47,12 +47,14 @@ def check_parsed_files():
     columns = check_columns(df_expenses, columns, EXPENSES_FILE)
     columns = check_columns(df_incomes, columns, INCOMES_FILE)
 
-    columns_values = get_values_for_selectors(df_expenses, columns_values)
-    columns_values = get_values_for_selectors(df_incomes, columns_values)
+    if (should_print):
+      columns_values = get_values_for_selectors(df_expenses, columns_values)
+      columns_values = get_values_for_selectors(df_incomes, columns_values)
 
-  print('All good with column names')
-  for column_name, values in columns_values.items():
-    print(f"{column_name} - {values}")
+  if (should_print):
+    print('All good with column names')
+    for column_name, values in columns_values.items():
+      print(f"{column_name} - {values}")
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 
-def combine_finance_data():
+def combine_finance_data(should_print=False):
   names: list[int | str] = list(range(2015,2025))
   names.append("2015_2024_foreign")
 
@@ -25,9 +25,10 @@ def combine_finance_data():
   df_expenses_all = pd.concat(frames_expenses, ignore_index=True).sort_values(by="date")
   df_incomes_all = pd.concat(frames_incomes, ignore_index=True).sort_values(by="date")
 
-  print("All expenses and incomes", len(df_all))
-  print("All expenses", len(df_expenses_all))
-  print("All incomes", len(df_incomes_all))
+  if should_print:
+    print("All expenses and incomes", len(df_all))
+    print("All expenses", len(df_expenses_all))
+    print("All incomes", len(df_incomes_all))
 
   ALL_EXPENSES_FILE = DATA_DIR / "all" / "finance_expenses_all.csv"
   ALL_INCOMES_FILE = DATA_DIR / "all" / "finance_incomes_all.csv"

@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def calculate_exchange_refs():
+def calculate_exchange_refs(should_print=False):
   DATA_DIR = Path(__file__).resolve().parents[0] / "data" / "2015_2024_foreign"
   EXPENSES_FILE = DATA_DIR / "finance_expenses_2015_2024_foreign.csv"
   INCOMES_FILE = DATA_DIR / "finance_incomes_2015_2024_foreign.csv"
@@ -65,7 +65,8 @@ def calculate_exchange_refs():
   df_expenses.to_csv(EXPENSES_FILE, index=False, encoding="utf-8")
   df_incomes.to_csv(INCOMES_FILE, index=False, encoding="utf-8")
 
-  print("number of references added:", num_of_refs)
+  if (should_print):
+    print("number of references added:", num_of_refs)
 
 
 if __name__ == "__main__":

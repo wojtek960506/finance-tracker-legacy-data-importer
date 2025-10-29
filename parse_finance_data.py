@@ -96,7 +96,8 @@ def parse_finance_spreadsheet(
   raw_file: Path,
   expenses_file: Path,
   incomes_file: Path,
-  year: int = None
+  year: int = None,
+  should_print: bool = False
 ):
   # load CSV (first 2 rows don't have meaningful data)
   df = pd.read_csv(raw_file, skiprows=2)
@@ -141,10 +142,11 @@ def parse_finance_spreadsheet(
   df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
   df_incomes.to_csv(incomes_file, index=False, encoding="utf-8")
 
-  print_info(year, df_expenses, df_incomes)
+  if should_print:
+    print_info(year, df_expenses, df_incomes)
 
 
-def parse_finance_data():
+def parse_finance_data(should_print= False):
   names: list[int | str] = list(range(2015,2025))
   names.append("2015_2024_foreign")
   
@@ -155,7 +157,7 @@ def parse_finance_data():
     INCOMES_FILE = DATA_DIR / f"finance_incomes_{name}.csv"
 
     year = name if isinstance(name, int) else None
-    parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE, year)
+    parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE, year, should_print)
 
   
 if __name__ == "__main__":
