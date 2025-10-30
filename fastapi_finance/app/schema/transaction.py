@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 
@@ -15,6 +15,14 @@ class TransactionBase(BaseModel):
   currencies: Optional[str] = None
   calc_ref_idx: Optional[int] = Field(None, alias="calcRefIdx")
   transaction_type: str = Field(..., alias="transactionType")
+  created_at: Optional[datetime] = Field(
+    default_factory=lambda: datetime.now(timezone.utc),
+    alias="createdAt"  
+  )
+  updated_at: Optional[datetime] = Field(
+    default_factory=lambda: datetime.now(timezone.utc),
+    alias="updatedAt"  
+  )
 
 
 class TransactionInDB(TransactionBase):
