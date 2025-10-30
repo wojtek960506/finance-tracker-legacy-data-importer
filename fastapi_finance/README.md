@@ -1,0 +1,1 @@
+FastAPI small server to save and delete all of the old transactions at once
