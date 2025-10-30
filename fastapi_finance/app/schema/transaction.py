@@ -11,9 +11,9 @@ class TransactionBase(BaseModel):
   currency: str
   payment_method: str = Field(..., alias="paymentMethod")
   account: str
-  exchange_rate: Optional[float] = None
+  exchange_rate: Optional[float] = Field(None, alias="exchangeRate")
   currencies: Optional[str] = None
-  calc_ref_idx: Optional[int] = None
+  calc_ref_idx: Optional[int] = Field(None, alias="calcRefIdx")
   transaction_type: str = Field(..., alias="transactionType")
 
 
