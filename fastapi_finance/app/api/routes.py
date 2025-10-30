@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter
 from app.schema.transaction import TransactionInDB
+from app.utils.mongodb_request import MongoDBRequest
 
 
 router = APIRouter()
 
 @router.get("/", response_model=list[TransactionInDB])
-async def get_transactions(request: Request):
+async def get_transactions(request: MongoDBRequest):
   """Return all transactions from MongoDB."""
   db = request.app.mongodb
   
