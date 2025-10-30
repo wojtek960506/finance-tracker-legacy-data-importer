@@ -56,6 +56,8 @@ def check_parsed_files(should_print=False):
     for column_name, values in columns_values.items():
       print(f"{column_name} - {values}")
 
+  print("checking done")
+
 
 if __name__ == "__main__":
   check_parsed_files()

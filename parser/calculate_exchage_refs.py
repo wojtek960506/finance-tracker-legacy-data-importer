@@ -68,6 +68,8 @@ def calculate_exchange_refs(should_print=False):
   if (should_print):
     print("number of references added:", num_of_refs)
 
+  print('calculating exchange refs done')
+
 
 if __name__ == "__main__":
   calculate_exchange_refs()

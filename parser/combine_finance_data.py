@@ -38,6 +38,8 @@ def combine_finance_data(should_print=False):
   df_incomes_all.to_csv(ALL_INCOMES_FILE, index=False, encoding="utf-8")
   df_all.to_csv(ALL_TRANSACTIONS_FILE, index=False, encoding="utf-8")
 
+  print("combining data done")
+
 
 if __name__ == "__main__":
   combine_finance_data()

@@ -159,6 +159,8 @@ def parse_finance_data(should_print= False):
     year = name if isinstance(name, int) else None
     parse_finance_spreadsheet(RAW_FILE, EXPENSES_FILE, INCOMES_FILE, year, should_print)
 
+  print("parsing done")
+
   
 if __name__ == "__main__":
   parse_finance_data()

@@ -11,10 +11,10 @@ import click
 @click.option("--should-print", is_flag=True, help="Whehter to print additional info")
 def main(should_copy, should_print):
   
-  print('Start parsing')
+  print('Start preparing files')
 
   if should_copy:
-    copy_finance_data()
+    copy_finance_data(should_print)
   parse_finance_data(should_print)
   calculate_exchange_refs(should_print)
   check_parsed_files(should_print)
