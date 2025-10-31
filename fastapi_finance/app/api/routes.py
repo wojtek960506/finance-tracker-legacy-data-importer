@@ -7,6 +7,7 @@ from app.schema.transaction import (
 )
 from app.utils.mongodb_request import MongoDBRequest
 from bson import ObjectId
+from datetime import datetime, timezone
 
 
 router = APIRouter()
@@ -65,13 +66,13 @@ async def update_transaction_full(
 ):
   """Update whole transaction"""
   db = request.app.mongodb
+  # exclude defaults and unset not to update value of created at automatically
+  doc = transaction.model_dump(by_alias=True, exclude_defaults=True, exclude_unset=True)
+  doc["updatedAt"] = datetime.now(timezone.utc)
 
-  # it returns old one
-  old = await db.transactions.find_one_and_update(
-    { "_id": ObjectId(id)},
-    { "$set": transaction.model_dump(by_alias=True) }
-  )
+  print('PUT:', doc)
 
+  old = await db.transactions.find_one_and_update({ "_id": ObjectId(id)}, { "$set": doc })
   if not old:
     raise HTTPException(
       status.HTTP_404_NOT_FOUND,
@@ -98,11 +99,9 @@ async def update_transaction_full(
     exclude_unset=True,
     exclude_defaults=True
   )
-  old = await db.transactions.find_one_and_update(
-    { "_id": ObjectId(id)},
-    { "$set": doc }
-  )
+  doc["updatedAt"] = datetime.now(timezone.utc)
 
+  old = await db.transactions.find_one_and_update({ "_id": ObjectId(id)}, { "$set": doc })
   if not old:
     raise HTTPException(
       status.HTTP_404_NOT_FOUND,

@@ -41,8 +41,6 @@ class TransactionCreate(TransactionBase, PartialModelMixin):
     related = [self.idx, self.currencies, self.exchange_rate, self.calc_ref_idx]
     provided = [v is not None for v in related]
 
-    print(provided)
-
     if any(provided) and not all(provided):
       raise ValueError(
         "Values for 'idx', 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
