@@ -43,14 +43,28 @@ async def get_transaction(id: str, request: MongoDBRequest):
 async def create_transaction(request: MongoDBRequest, transaction: TransactionCreate):
   """Create single transaction"""
   db = request.app.mongodb
-  doc = transaction.model_dump(by_alias=True)
-
-  result = await db.transaction.insert_one(doc)
+  result = await db.transaction.insert_one(transaction.model_dump(by_alias=True))
 
   # get newly created object
   new_transaction = await db.transaction.find_one({ "_id": result.inserted_id })
   new_transaction["_id"] = str(new_transaction["_id"])
   return TransactionInDB.model_validate(new_transaction)
 
+@router.delete("/{id}")
+async def delete_transaction(request: MongoDBRequest, id: str):
+  """Delete single transaction"""
+  db = request.app.mongodb
+  deleted = await db.transaction.find_one_and_delete({ "_id": ObjectId(id) })
+
+  if not deleted:
+    raise HTTPException(
+      status.HTTP_404_NOT_FOUND,
+      detail=f"Transaction with id: '{id}' not found"
+    )
+
+  # print(result)
+  deleted["_id"] = str(deleted["_id"])
+
+  return TransactionInDB.model_validate(deleted)
 
 
