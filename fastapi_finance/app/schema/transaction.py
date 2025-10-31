@@ -1,4 +1,5 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic_partial import PartialModelMixin
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -31,6 +32,9 @@ class TransactionBase(BaseModel):
       raise ValueError("Amount must be greater than zero")
     return value
   
+
+class TransactionCreate(TransactionBase):
+  """Schema for creating a new transaction."""
   @model_validator(mode="after")
   def validate_exchange(self):
     """If any of 4 fields is set then all must be set."""
@@ -44,12 +48,15 @@ class TransactionBase(BaseModel):
         "Values for 'idx', 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
       )
     return self
-
-
-class TransactionCreate(TransactionBase):
-  """Schema for creating a new transaction."""
   pass
-  
+
+class TransactionFullUpdate(TransactionCreate):
+  """Schema for full update of transaction."""
+  pass
+
+class TransactionPartialUpdate(PartialModelMixin[TransactionCreate]):
+  """Schema for partial update of transaction."""
+  pass
 
 class TransactionInDB(TransactionBase):
   """Schema for data retrieved from MondoDB"""

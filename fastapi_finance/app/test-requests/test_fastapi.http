@@ -37,14 +37,15 @@ PUT {{baseUrl}}/transactions/{{transactionId}}
 Content-Type: application/json
 
 { 
-  "date": "2015-9-24",
+  "date": "2015-09-24",
   "description": "ASEC W-wa Ratusz Ar/Warszawa some change",
-  "amount": 1.70,
+  "amount": 2.70,
   "currency": "PLN",
   "category": "transport",
   "transactionType": "expense",
   "paymentMethod": "card",
-  "account": "mBank"
+  "account": "mBank",
+  "exchangeRate": 1.6
 }
 
 ### Partial update of transaction (PATCH)

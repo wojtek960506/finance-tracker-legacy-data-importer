@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schema.transaction import TransactionInDB, TransactionCreate
+from app.schema.transaction import TransactionInDB, TransactionCreate, TransactionFullUpdate
 from app.utils.mongodb_request import MongoDBRequest
 from bson import ObjectId
 
@@ -50,6 +50,28 @@ async def create_transaction(request: MongoDBRequest, transaction: TransactionCr
   new_transaction["_id"] = str(new_transaction["_id"])
   return TransactionInDB.model_validate(new_transaction)
 
+@router.put("/{id}", response_model=TransactionInDB)
+async def update_transaction_full(
+  request: MongoDBRequest,
+  id: str,
+  transaction: TransactionFullUpdate
+):
+  """Update whole transaction"""
+  db = request.app.mongodb
+  udpated = await db.transactions.find_one_and_update(
+    { "_id": ObjectId(id)},
+    { "$set": transaction.model_dump(by_alias=True) }
+  )
+
+  if not udpated:
+    raise HTTPException(
+      status.HTTP_404_NOT_FOUND,
+      detail=f"Transaction with id: '{id}' not found"
+    )
+
+  udpated["_id"] = str(udpated["_id"])
+  return TransactionInDB.model_validate(udpated)
+
 @router.delete("/{id}")
 async def delete_transaction(request: MongoDBRequest, id: str):
   """Delete single transaction"""
@@ -62,9 +84,7 @@ async def delete_transaction(request: MongoDBRequest, id: str):
       detail=f"Transaction with id: '{id}' not found"
     )
 
-  # print(result)
   deleted["_id"] = str(deleted["_id"])
-
   return TransactionInDB.model_validate(deleted)
 
 
