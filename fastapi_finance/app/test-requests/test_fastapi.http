@@ -1,0 +1,63 @@
+@baseUrl = http://localhost:8000/api
+@transactionId = 68fb8c1b546d152a8e03dad2
+@newTransactionId = i
+
+
+### Get all transactions
+GET {{baseUrl}}/transactions
+Accept: application/json
+
+### Get single transaction
+GET {{baseUrl}}/transactions/{{transactionId}}
+Accept: application/json
+
+### Create new transaction
+
+# @name createTransaction
+POST {{baseUrl}}/transactions
+Content-Type: application/json
+
+{
+  "idx": 123,
+  "date": "2015-09-24",
+  "description": "ASEC W-wa Ratusz Ar/Warszawa",
+  "amount": 1.70,
+  "currency": "PLN",
+  "category": "transport",
+  "transactionType": "expense",
+  "paymentMethod": "card",
+  "account": "mBank",
+  "currencies": "PLN/CZK",
+  "exchangeRate": 1.5,
+  "calcRefIdx": 321
+}
+
+### Update a transaction (PUT)
+PUT {{baseUrl}}/transactions/{{transactionId}}
+Content-Type: application/json
+
+{ 
+  "date": "2015-9-24",
+  "description": "ASEC W-wa Ratusz Ar/Warszawa some change",
+  "amount": 1.70,
+  "currency": "PLN",
+  "category": "transport",
+  "transactionType": "expense",
+  "paymentMethod": "card",
+  "account": "mBank"
+}
+
+### Partial update of transaction (PATCH)
+PATCH {{baseUrl}}/transactions/{{transactionId}}
+Content-Type: application/json
+
+{
+  "description": "ASEC W-wa Ratusz Ar/Warszawa another change",
+  "amount": 7.77
+}
+
+### Delete a transaction
+
+@newTransactionId = {{createTransaction.response.body._id}}
+
+DELETE {{baseUrl}}/transactions/{{newTransactionId}}

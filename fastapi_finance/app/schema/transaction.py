@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -21,9 +21,35 @@ class TransactionBase(BaseModel):
   )
   updated_at: Optional[datetime] = Field(
     default_factory=lambda: datetime.now(timezone.utc),
-    alias="updatedAt"  
+    alias="updatedAt"
   )
 
+  @field_validator("amount")
+  @classmethod
+  def amount_must_be_positive(cls, value):
+    if value <= 0:
+      raise ValueError("Amount must be greater than zero")
+    return value
+  
+  @model_validator(mode="after")
+  def validate_exchange(self):
+    """If any of 4 fields is set then all must be set."""
+    related = [self.idx, self.currencies, self.exchange_rate, self.calc_ref_idx]
+    provided = [v is not None for v in related]
+
+    print(provided)
+
+    if any(provided) and not all(provided):
+      raise ValueError(
+        "Values for 'idx', 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
+      )
+    return self
+
+
+class TransactionCreate(TransactionBase):
+  """Schema for creating a new transaction."""
+  pass
+  
 
 class TransactionInDB(TransactionBase):
   """Schema for data retrieved from MondoDB"""
