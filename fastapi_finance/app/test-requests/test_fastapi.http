@@ -1,14 +1,9 @@
 @baseUrl = http://localhost:8000/api
-@transactionId = 68fb8c1b546d152a8e03dad2
 @newTransactionId = i
 
 
 ### Get all transactions
 GET {{baseUrl}}/transactions
-Accept: application/json
-
-### Get single transaction
-GET {{baseUrl}}/transactions/{{transactionId}}
 Accept: application/json
 
 ### Create new transaction
@@ -32,11 +27,20 @@ Content-Type: application/json
   "calcRefIdx": 321
 }
 
+### Get single transaction
+
+@newTransactionId = {{createTransaction.response.body._id}}
+
+GET {{baseUrl}}/transactions/{{newTransactionId}}
+Accept: application/json
+
 ### Update a transaction (PUT)
-PUT {{baseUrl}}/transactions/{{transactionId}}
+
+PUT {{baseUrl}}/transactions/{{newTransactionId}} 
 Content-Type: application/json
 
 { 
+  "idx": 567,
   "date": "2015-09-24",
   "description": "ASEC W-wa Ratusz Ar/Warszawa some change",
   "amount": 2.70,
@@ -45,11 +49,13 @@ Content-Type: application/json
   "transactionType": "expense",
   "paymentMethod": "card",
   "account": "mBank",
-  "exchangeRate": 1.6
+  "currencies": "ABC/DEF",
+  "exchangeRate": 1.6,
+  "calcRefIdx": 1
 }
 
 ### Partial update of transaction (PATCH)
-PATCH {{baseUrl}}/transactions/{{transactionId}}
+PATCH {{baseUrl}}/transactions/{{newTransactionId}}
 Content-Type: application/json
 
 {
@@ -59,6 +65,9 @@ Content-Type: application/json
 
 ### Delete a transaction
 
-@newTransactionId = {{createTransaction.response.body._id}}
-
 DELETE {{baseUrl}}/transactions/{{newTransactionId}}
+
+
+### Delete all transactions
+
+DELETE {{baseUrl}}/transactions

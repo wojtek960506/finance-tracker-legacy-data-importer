@@ -1,5 +1,10 @@
 from fastapi import APIRouter, HTTPException, status
-from app.schema.transaction import TransactionInDB, TransactionCreate, TransactionFullUpdate
+from app.schema.transaction import (
+  TransactionInDB,
+  TransactionCreate,
+  TransactionFullUpdate,
+  TransactionPartialUpdate
+)
 from app.utils.mongodb_request import MongoDBRequest
 from bson import ObjectId
 
@@ -39,16 +44,18 @@ async def get_transaction(id: str, request: MongoDBRequest):
   transaction["_id"] = str(transaction["_id"])
   return TransactionInDB.model_validate(transaction)
 
+
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
 async def create_transaction(request: MongoDBRequest, transaction: TransactionCreate):
   """Create single transaction"""
   db = request.app.mongodb
-  result = await db.transaction.insert_one(transaction.model_dump(by_alias=True))
+  result = await db.transactions.insert_one(transaction.model_dump(by_alias=True))
 
   # get newly created object
-  new_transaction = await db.transaction.find_one({ "_id": result.inserted_id })
+  new_transaction = await db.transactions.find_one({ "_id": result.inserted_id })
   new_transaction["_id"] = str(new_transaction["_id"])
   return TransactionInDB.model_validate(new_transaction)
+
 
 @router.put("/{id}", response_model=TransactionInDB)
 async def update_transaction_full(
@@ -58,25 +65,61 @@ async def update_transaction_full(
 ):
   """Update whole transaction"""
   db = request.app.mongodb
-  udpated = await db.transactions.find_one_and_update(
+
+  # it returns old one
+  old = await db.transactions.find_one_and_update(
     { "_id": ObjectId(id)},
     { "$set": transaction.model_dump(by_alias=True) }
   )
 
-  if not udpated:
+  if not old:
     raise HTTPException(
       status.HTTP_404_NOT_FOUND,
       detail=f"Transaction with id: '{id}' not found"
     )
 
-  udpated["_id"] = str(udpated["_id"])
-  return TransactionInDB.model_validate(udpated)
+  updated = await db.transactions.find_one({ "_id": old["_id"] })
+  updated["_id"] = str(updated["_id"])
+
+  return TransactionInDB.model_validate(updated)
+
+
+@router.patch("/{id}", response_model=TransactionInDB)
+async def update_transaction_full(
+  request: MongoDBRequest,
+  id: str,
+  transaction: TransactionPartialUpdate
+):
+  """Update whole transaction"""
+  db = request.app.mongodb
+  doc = transaction.model_dump(
+    by_alias=True,
+    exclude_none=True,
+    exclude_unset=True,
+    exclude_defaults=True
+  )
+  old = await db.transactions.find_one_and_update(
+    { "_id": ObjectId(id)},
+    { "$set": doc }
+  )
+
+  if not old:
+    raise HTTPException(
+      status.HTTP_404_NOT_FOUND,
+      detail=f"Transaction with id: '{id}' not found"
+    )
+
+  updated = await db.transactions.find_one({ "_id": old["_id"] })
+  updated["_id"] = str(updated["_id"])
+
+  return TransactionInDB.model_validate(updated)
+
 
 @router.delete("/{id}")
 async def delete_transaction(request: MongoDBRequest, id: str):
   """Delete single transaction"""
   db = request.app.mongodb
-  deleted = await db.transaction.find_one_and_delete({ "_id": ObjectId(id) })
+  deleted = await db.transactions.find_one_and_delete({ "_id": ObjectId(id) })
 
   if not deleted:
     raise HTTPException(
@@ -88,3 +131,10 @@ async def delete_transaction(request: MongoDBRequest, id: str):
   return TransactionInDB.model_validate(deleted)
 
 
+@router.delete("/")
+async def delete_all_transactions(request: MongoDBRequest):
+  """Delete single transaction"""
+  db = request.app.mongodb
+  deleted = await db.transactions.delete_many({})
+
+  return { "deletedCount": deleted.deleted_count }

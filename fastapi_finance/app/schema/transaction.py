@@ -33,7 +33,7 @@ class TransactionBase(BaseModel):
     return value
   
 
-class TransactionCreate(TransactionBase):
+class TransactionCreate(TransactionBase, PartialModelMixin):
   """Schema for creating a new transaction."""
   @model_validator(mode="after")
   def validate_exchange(self):
@@ -54,7 +54,9 @@ class TransactionFullUpdate(TransactionCreate):
   """Schema for full update of transaction."""
   pass
 
-class TransactionPartialUpdate(PartialModelMixin[TransactionCreate]):
+TransactionPartialUpdateBase = TransactionCreate.as_partial()
+
+class TransactionPartialUpdate(TransactionPartialUpdateBase):
   """Schema for partial update of transaction."""
   pass
 
