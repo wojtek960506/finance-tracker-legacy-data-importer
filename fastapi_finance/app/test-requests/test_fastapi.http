@@ -3,8 +3,12 @@
 
 
 ### Get all transactions
-GET {{baseUrl}}/transactions
-Accept: application/json
+# do not execute it because when a lot of records VSCode might crash
+# GET {{baseUrl}}/transactions
+# Accept: application/json
+
+### Count all transactions
+GET {{baseUrl}}/transactions/count
 
 ### Create new transaction
 

@@ -11,11 +11,13 @@ from datetime import datetime, timezone
 import csv
 from io import StringIO
 import time
+from app.decorators import show_execution_time
 
 
 router = APIRouter()
 
 @router.get("/", response_model=list[TransactionInDB])
+@show_execution_time
 async def get_transactions(request: MongoDBRequest):
   """Return all transactions from MongoDB."""
   db = request.app.mongodb
@@ -34,7 +36,20 @@ async def get_transactions(request: MongoDBRequest):
   # but when calling this function directly it returns Pydantic model objects
   return transactions
 
+
+@router.get("/count")
+@show_execution_time
+async def get_transactions_count(request: MongoDBRequest):
+  """Return number of all transactions stored in MongoDB."""
+
+  db = request.app.mongodb
+  result = await db.transactions.count_documents({})
+
+  return { "count": result }
+
+
 @router.get("/{id}", response_model=TransactionInDB)
+@show_execution_time
 async def get_transaction(id: str, request: MongoDBRequest):
   """Return single transaction by id."""
   db = request.app.mongodb
@@ -50,6 +65,7 @@ async def get_transaction(id: str, request: MongoDBRequest):
 
 
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
+@show_execution_time
 async def create_transaction(request: MongoDBRequest, transaction: TransactionCreate):
   """Create single transaction"""
   db = request.app.mongodb
@@ -62,6 +78,7 @@ async def create_transaction(request: MongoDBRequest, transaction: TransactionCr
 
 
 @router.put("/{id}", response_model=TransactionInDB)
+@show_execution_time
 async def update_transaction_full(
   request: MongoDBRequest,
   id: str,
@@ -89,6 +106,7 @@ async def update_transaction_full(
 
 
 @router.patch("/{id}", response_model=TransactionInDB)
+@show_execution_time
 async def update_transaction_full(
   request: MongoDBRequest,
   id: str,
@@ -118,6 +136,7 @@ async def update_transaction_full(
 
 
 @router.delete("/{id}")
+@show_execution_time
 async def delete_transaction(request: MongoDBRequest, id: str):
   """Delete single transaction"""
   db = request.app.mongodb
@@ -134,19 +153,11 @@ async def delete_transaction(request: MongoDBRequest, id: str):
 
 
 @router.delete("/")
+@show_execution_time
 async def delete_all_transactions(request: MongoDBRequest):
   """Delete single transaction"""
-  start = time.perf_counter() * 1000
-  
   db = request.app.mongodb
   deleted = await db.transactions.delete_many({})
-
-  elapsed = (time.perf_counter() * 1000) - start
-  message = f"Deleting all transactions took {(elapsed/1000): .3f} seconds"
-  print('*' * len(message) * 2)
-  print(message)
-  print('*' * len(message) * 2)
-
 
   return { "deletedCount": deleted.deleted_count }
 
@@ -162,11 +173,9 @@ def normalize_csv_row(row: dict) -> dict:
 
 
 @router.post("/import-csv")
+@show_execution_time
 async def import_transactions_csv(request: MongoDBRequest, file: UploadFile = File(...)):
   """Create transactions based on the data in CSV"""
-  
-  start = time.perf_counter() * 1000
-
   if not file.filename.endswith(".csv"):
     raise HTTPException(
       status_code=status.HTTP_400_BAD_REQUEST,
@@ -198,19 +207,6 @@ async def import_transactions_csv(request: MongoDBRequest, file: UploadFile = Fi
   result = await db.transactions.insert_many(valid_docs)
   inserted_ids = len(result.inserted_ids)
   
-  # BATCH_SIZE = 1000
-  # for i in range(0, len(valid_docs), BATCH_SIZE):
-  #   batch = valid_docs[i:i+BATCH_SIZE]
-  #   result = await db.transactions.insert_many(batch)
-  #   print(len(result.inserted_ids))
-  #   inserted_ids += len(result.inserted_ids)
-
-  elapsed = (time.perf_counter() * 1000) - start
-  message = f"Creating transactions from CSV file took {(elapsed/1000): .3f} seconds"
-  print('*' * len(message) * 2)
-  print(message)
-  print('*' * len(message) * 2)
-
   return {
     "imported": inserted_ids,
     "skipped": len(errors),
