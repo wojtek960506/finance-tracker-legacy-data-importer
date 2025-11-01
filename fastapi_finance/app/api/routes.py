@@ -10,6 +10,7 @@ from bson import ObjectId
 from datetime import datetime, timezone
 import csv
 from io import StringIO
+import time
 
 
 router = APIRouter()
@@ -66,7 +67,7 @@ async def update_transaction_full(
   id: str,
   transaction: TransactionFullUpdate
 ):
-  """Update whole transaction"""
+  """Full update transaction"""
   db = request.app.mongodb
   # exclude defaults and unset not to update value of created at automatically
   doc = transaction.model_dump(by_alias=True, exclude_defaults=True, exclude_unset=True)
@@ -93,7 +94,7 @@ async def update_transaction_full(
   id: str,
   transaction: TransactionPartialUpdate
 ):
-  """Update whole transaction"""
+  """Partial update of transaction"""
   db = request.app.mongodb
   doc = transaction.model_dump(
     by_alias=True,
@@ -135,10 +136,20 @@ async def delete_transaction(request: MongoDBRequest, id: str):
 @router.delete("/")
 async def delete_all_transactions(request: MongoDBRequest):
   """Delete single transaction"""
+  start = time.perf_counter() * 1000
+  
   db = request.app.mongodb
   deleted = await db.transactions.delete_many({})
 
+  elapsed = (time.perf_counter() * 1000) - start
+  message = f"Deleting all transactions took {(elapsed/1000): .3f} seconds"
+  print('*' * len(message) * 2)
+  print(message)
+  print('*' * len(message) * 2)
+
+
   return { "deletedCount": deleted.deleted_count }
+
 
 def normalize_csv_row(row: dict) -> dict:
   normalized_row = {}
@@ -149,10 +160,13 @@ def normalize_csv_row(row: dict) -> dict:
       normalized_row[key] = value
   return normalized_row
 
+
 @router.post("/import-csv")
 async def import_transactions_csv(request: MongoDBRequest, file: UploadFile = File(...)):
-  print('mama')
+  """Create transactions based on the data in CSV"""
   
+  start = time.perf_counter() * 1000
+
   if not file.filename.endswith(".csv"):
     raise HTTPException(
       status_code=status.HTTP_400_BAD_REQUEST,
@@ -179,10 +193,26 @@ async def import_transactions_csv(request: MongoDBRequest, file: UploadFile = Fi
       status_code=status.HTTP_400_BAD_REQUEST, detail="No valid transactions found in CSV."
     )
   
+  inserted_ids = 0
+
   result = await db.transactions.insert_many(valid_docs)
+  inserted_ids = len(result.inserted_ids)
+  
+  # BATCH_SIZE = 1000
+  # for i in range(0, len(valid_docs), BATCH_SIZE):
+  #   batch = valid_docs[i:i+BATCH_SIZE]
+  #   result = await db.transactions.insert_many(batch)
+  #   print(len(result.inserted_ids))
+  #   inserted_ids += len(result.inserted_ids)
+
+  elapsed = (time.perf_counter() * 1000) - start
+  message = f"Creating transactions from CSV file took {(elapsed/1000): .3f} seconds"
+  print('*' * len(message) * 2)
+  print(message)
+  print('*' * len(message) * 2)
 
   return {
-    "imported": len(result.inserted_ids),
+    "imported": inserted_ids,
     "skipped": len(errors),
     "errors": errors[:10]
   }

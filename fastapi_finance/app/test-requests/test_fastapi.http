@@ -13,7 +13,6 @@ POST {{baseUrl}}/transactions
 Content-Type: application/json
 
 {
-  
   "date": "2015-09-24",
   "description": "ASEC W-wa Ratusz Ar/Warszawa",
   "amount": 1.70,
@@ -22,8 +21,6 @@ Content-Type: application/json
   "transactionType": "expense",
   "paymentMethod": "card",
   "account": "mBank"
-  
-  
 }
 
 ### Get single transaction
