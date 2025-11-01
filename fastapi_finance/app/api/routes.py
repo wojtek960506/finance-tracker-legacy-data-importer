@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, UploadFile, File
 from app.schema.transaction import (
   TransactionInDB,
   TransactionCreate,
@@ -8,6 +8,8 @@ from app.schema.transaction import (
 from app.utils.mongodb_request import MongoDBRequest
 from bson import ObjectId
 from datetime import datetime, timezone
+import csv
+from io import StringIO
 
 
 router = APIRouter()
@@ -137,3 +139,50 @@ async def delete_all_transactions(request: MongoDBRequest):
   deleted = await db.transactions.delete_many({})
 
   return { "deletedCount": deleted.deleted_count }
+
+def normalize_csv_row(row: dict) -> dict:
+  normalized_row = {}
+  for key, value in row.items():
+    if value == '':
+      normalized_row[key] = None
+    else:
+      normalized_row[key] = value
+  return normalized_row
+
+@router.post("/import-csv")
+async def import_transactions_csv(request: MongoDBRequest, file: UploadFile = File(...)):
+  print('mama')
+  
+  if not file.filename.endswith(".csv"):
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST,
+      detail="Only CSV files are supported."
+    )
+  
+  db = request.app.mongodb
+  content = await file.read()
+  decoded = content.decode("utf-8")
+  csv_reader = csv.DictReader(StringIO(decoded))
+
+  valid_docs = []
+  errors = []
+
+  for i, row in enumerate(csv_reader, start=1):
+    try:
+      transaction = TransactionCreate(**normalize_csv_row(row))
+      valid_docs.append(transaction.model_dump(by_alias=True))
+    except Exception as e:     
+      errors.append({ "row": i, "error": str(e) })
+
+  if not valid_docs:
+    raise HTTPException(
+      status_code=status.HTTP_400_BAD_REQUEST, detail="No valid transactions found in CSV."
+    )
+  
+  result = await db.transactions.insert_many(valid_docs)
+
+  return {
+    "imported": len(result.inserted_ids),
+    "skipped": len(errors),
+    "errors": errors[:10]
+  }

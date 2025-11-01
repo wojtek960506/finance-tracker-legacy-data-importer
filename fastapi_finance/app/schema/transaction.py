@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
 from pydantic_partial import PartialModelMixin
 from datetime import datetime, timezone
 from typing import Optional
@@ -28,22 +28,24 @@ class TransactionBase(BaseModel):
   @field_validator("amount")
   @classmethod
   def amount_must_be_positive(cls, value):
-    if value <= 0:
+    if value < 0:
       raise ValueError("Amount must be greater than zero")
     return value
+  
+  model_config = ConfigDict(populate_by_name=True)
   
 
 class TransactionCreate(TransactionBase, PartialModelMixin):
   """Schema for creating a new transaction."""
   @model_validator(mode="after")
   def validate_exchange(self):
-    """If any of 4 fields is set then all must be set."""
-    related = [self.idx, self.currencies, self.exchange_rate, self.calc_ref_idx]
+    """If any of 3 fields is set then all must be set."""
+    related = [self.currencies, self.exchange_rate, self.calc_ref_idx]
     provided = [v is not None for v in related]
 
     if any(provided) and not all(provided):
       raise ValueError(
-        "Values for 'idx', 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
+        "Values for 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
       )
     return self
   pass

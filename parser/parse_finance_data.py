@@ -66,7 +66,7 @@ def add_missing_columns(df: pd.DataFrame, transaction_type: str):
   if not "currencies" in df.columns:
     df["currencies"] = pd.NA
   
-  df["calc_ref_idx"] = -1
+  df["calc_ref_idx"] = pd.NA
   df["transaction_type"] = transaction_type
 
 

@@ -13,7 +13,7 @@ POST {{baseUrl}}/transactions
 Content-Type: application/json
 
 {
-  "idx": 123,
+  
   "date": "2015-09-24",
   "description": "ASEC W-wa Ratusz Ar/Warszawa",
   "amount": 1.70,
@@ -21,10 +21,9 @@ Content-Type: application/json
   "category": "transport",
   "transactionType": "expense",
   "paymentMethod": "card",
-  "account": "mBank",
-  "currencies": "PLN/CZK",
-  "exchangeRate": 1.5,
-  "calcRefIdx": 321
+  "account": "mBank"
+  
+  
 }
 
 ### Get single transaction
@@ -71,3 +70,16 @@ DELETE {{baseUrl}}/transactions/{{newTransactionId}}
 ### Delete all transactions
 
 DELETE {{baseUrl}}/transactions
+
+
+### Import transactions CSV
+POST http://localhost:8000/api/transactions/import-csv
+Content-Type: multipart/form-data; boundary=boundary123
+
+--boundary123
+Content-Disposition: form-data; name="file"; filename="finance_all.csv"
+Content-Type: text/csv
+
+< ../../../parser/data/all/finance_all.csv
+--boundary123--
+
