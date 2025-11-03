@@ -1,4 +1,11 @@
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import (
+  BaseModel,
+  Field,
+  field_validator,
+  model_validator,
+  ConfigDict,
+  field_serializer
+)
 from pydantic_partial import PartialModelMixin
 from datetime import datetime, timezone
 from typing import Optional
@@ -54,7 +61,7 @@ class TransactionFullUpdate(TransactionCreate):
   """Schema for full update of transaction."""
   pass
 
-TransactionPartialUpdateBase = TransactionCreate.as_partial()
+TransactionPartialUpdateBase = TransactionCreate.model_as_partial()
 
 class TransactionPartialUpdate(TransactionPartialUpdateBase):
   """Schema for partial update of transaction."""
@@ -64,6 +71,8 @@ class TransactionInDB(TransactionBase):
   """Schema for data retrieved from MondoDB"""
   id: str = Field(..., alias="_id")
 
-  class Config:
-    populate_by_name = True # allows both _id and id usage
-    json_encoders = { datetime: lambda d: d.isoformat() }
+  model_config = ConfigDict(populate_by_name = True)
+
+  @field_serializer("date", "created_at", "updated_at", when_used="json")
+  def serialize_datetimes(self, value: datetime) -> str:
+    return value.isoformat()

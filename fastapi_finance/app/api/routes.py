@@ -11,7 +11,11 @@ from datetime import datetime, timezone
 import csv
 from io import StringIO
 from app.decorators import show_execution_time
-from app.services.transaction_service import get_all_transactions
+from app.services.transaction_service import (
+  get_all_transactions,
+  get_all_transactions_count,
+  get_transaction
+)
 
 
 router = APIRouter()
@@ -27,29 +31,30 @@ async def get_transactions_route(request: MongoDBRequest):
 
 @router.get("/count")
 @show_execution_time
-async def get_transactions_count(request: MongoDBRequest):
+async def get_transactions_count_route(request: MongoDBRequest):
   """Return number of all transactions stored in MongoDB."""
-
-  db = request.app.mongodb
-  result = await db.transactions.count_documents({})
+  result = await get_all_transactions_count(request.app.mongodb)
 
   return { "count": result }
 
 
 @router.get("/{id}", response_model=TransactionInDB)
 @show_execution_time
-async def get_transaction(id: str, request: MongoDBRequest):
+async def get_transaction_route(id: str, request: MongoDBRequest):
   """Return single transaction by id."""
-  db = request.app.mongodb
+  result = await get_transaction(request.app.mongodb, id)
+  return result
 
-  transaction = await db.transactions.find_one({"_id": ObjectId(id)})
-  if not transaction:
-    raise HTTPException(
-      status.HTTP_404_NOT_FOUND,
-      detail=f"Transaction with id: '{id}' not found"
-    )
-  transaction["_id"] = str(transaction["_id"])
-  return TransactionInDB.model_validate(transaction)
+  # db = request.app.mongodb
+
+  # transaction = await db.transactions.find_one({"_id": ObjectId(id)})
+  # if not transaction:
+  #   raise HTTPException(
+  #     status.HTTP_404_NOT_FOUND,
+  #     detail=f"Transaction with id: '{id}' not found"
+  #   )
+  # transaction["_id"] = str(transaction["_id"])
+  # return TransactionInDB.model_validate(transaction)
 
 
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
