@@ -10,30 +10,18 @@ from bson import ObjectId
 from datetime import datetime, timezone
 import csv
 from io import StringIO
-import time
 from app.decorators import show_execution_time
+from app.services.transaction_service import get_all_transactions
 
 
 router = APIRouter()
 
 @router.get("/", response_model=list[TransactionInDB])
 @show_execution_time
-async def get_transactions(request: MongoDBRequest):
+async def get_transactions_route(request: MongoDBRequest):
   """Return all transactions from MongoDB."""
-  db = request.app.mongodb
-  
-  raw_transactions = await db.transactions.find().to_list(length=None)
+  transactions = await get_all_transactions(request.app.mongodb)
 
-  transactions = []
-  for raw_transaction in raw_transactions:
-    # Convert ObjectId to string for JSON serialization
-    raw_transaction["_id"] = str(raw_transaction["_id"])
-    # Convert raw dict to Pydantic model (applies aliases and snake case)
-    transaction = TransactionInDB.model_validate(raw_transaction)
-    transactions.append(transaction)
-
-  # original column names are returned in response JSON
-  # but when calling this function directly it returns Pydantic model objects
   return transactions
 
 
