@@ -4,6 +4,7 @@ from app.schema.transaction import (
 )
 from bson import ObjectId
 from fastapi import HTTPException, status
+from app.api.errors import AppError
 
 def get_transactions_collection(db: AsyncIOMotorDatabase) -> AsyncIOMotorCollection:
   return db.transactions
@@ -34,9 +35,10 @@ async def get_transaction(db: AsyncIOMotorDatabase, id: str) -> TransactionInDB:
   transaction = await get_transactions_collection(db).find_one({"_id": ObjectId(id)})
 
   if not transaction:
-    raise HTTPException(
-      status.HTTP_404_NOT_FOUND,
-      detail=f"Transaction with id: '{id}' not found"
+    raise AppError(
+      status_code=status.HTTP_404_NOT_FOUND,
+      message=f"Transaction with id: '{id}' not found"
     )
+
   transaction["_id"] = str(transaction["_id"])
   return TransactionInDB.model_validate(transaction)
