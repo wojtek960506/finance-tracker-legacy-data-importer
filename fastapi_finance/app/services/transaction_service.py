@@ -1,25 +1,20 @@
-from app.schema.transaction import TransactionInDB
+from app.schema.transaction import (
+  TransactionInDB,
+  TransactionCreate,
+)
 from bson import ObjectId
 from fastapi import status
 from app.api.errors import AppError
 from app.db.database import Database
 
+def normalize_id(transaction):
+  transaction["_id"] = str(transaction["_id"])
+  return transaction
+
 
 async def get_all_transactions(db: Database) -> list[TransactionInDB]:
-
-  raw_transactions = await db.transactions.find().to_list(length=None)
-  transactions = []
-
-  for raw_transaction in raw_transactions:
-    # Convert ObjectId to string for JSON serialization
-    raw_transaction["_id"] = str(raw_transaction["_id"])
-    # Convert raw dict to Pydantic model (applies aliases and snake case)
-    transaction = TransactionInDB.model_validate(raw_transaction)
-    transactions.append(transaction)
-
-  # original column names are returned when it is used for response in JSON
-  # but when calling this function directly it returns Pydantic model objects
-  return transactions
+  transactions = await db.transactions.find().to_list(length=None)
+  return [TransactionInDB.model_validate(normalize_id(t)) for t in transactions]
 
 
 async def get_all_transactions_count(db: Database) -> int:
@@ -28,12 +23,16 @@ async def get_all_transactions_count(db: Database) -> int:
 
 async def get_transaction(db: Database, id: str) -> TransactionInDB:
   transaction = await db.transactions.find_one({"_id": ObjectId(id)})
-
   if not transaction:
     raise AppError(
       status_code=status.HTTP_404_NOT_FOUND,
       message=f"Transaction with id: '{id}' not found"
     )
+  return TransactionInDB.model_validate(normalize_id(transaction))
 
-  transaction["_id"] = str(transaction["_id"])
-  return TransactionInDB.model_validate(transaction)
+
+async def create_transaction(db: Database, transaction: TransactionCreate):
+  result = await db.transactions.insert_one(transaction.model_dump(by_alias=True))
+  # get newly created object
+  new_t = await db.transactions.find_one({ "_id": result.inserted_id })
+  return TransactionInDB.model_validate(normalize_id(new_t))

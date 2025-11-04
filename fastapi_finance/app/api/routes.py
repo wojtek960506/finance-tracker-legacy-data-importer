@@ -14,7 +14,8 @@ from app.decorators import show_execution_time
 from app.services.transaction_service import (
   get_all_transactions,
   get_all_transactions_count,
-  get_transaction
+  get_transaction,
+  create_transaction,
 )
 from app.db.database import Database
 from app.dependencies.db_dep import get_db
@@ -51,15 +52,9 @@ async def route_get_transaction(id: str, db: Database = Depends(get_db)):
 
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
 @show_execution_time
-async def create_transaction(request: MongoDBRequest, transaction: TransactionCreate):
+async def route_create_transaction(transaction: TransactionCreate, db: Database = Depends(get_db)):
   """Create single transaction"""
-  db = request.app.mongodb
-  result = await db.transactions.insert_one(transaction.model_dump(by_alias=True))
-
-  # get newly created object
-  new_transaction = await db.transactions.find_one({ "_id": result.inserted_id })
-  new_transaction["_id"] = str(new_transaction["_id"])
-  return TransactionInDB.model_validate(new_transaction)
+  return await create_transaction(db, transaction)
 
 
 @router.put("/{id}", response_model=TransactionInDB)
@@ -71,7 +66,7 @@ async def update_transaction_full(
 ):
   """Full update transaction"""
   db = request.app.mongodb
-  # exclude defaults and unset not to update value of created at automatically
+  # exclude defaults and unset not to update value of `created_at` automatically
   doc = transaction.model_dump(by_alias=True, exclude_defaults=True, exclude_unset=True)
   doc["updatedAt"] = datetime.now(timezone.utc)
 
