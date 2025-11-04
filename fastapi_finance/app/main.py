@@ -10,6 +10,7 @@ from app.api.errors import (
   http_error_handler,
   validation_error_handler
 )
+from app.middleware.performance import add_execution_time
 
 @asynccontextmanager
 async def lifespan(app: MongoDBFastAPI):
@@ -28,6 +29,9 @@ app = MongoDBFastAPI(title="Finance API", lifespan=lifespan)
 app.add_exception_handler(AppError, app_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.add_exception_handler(StarletteHTTPException, http_error_handler)
+
+# Register middleware
+app.middleware("http")(add_execution_time)
 
 # Register routes
 app.include_router(api_router, prefix="/api/transactions")

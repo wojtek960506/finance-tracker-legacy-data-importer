@@ -10,6 +10,7 @@ def do_prints(value: float):
 
 
 def show_execution_time(func):
+  """Show in console execution time of the operation"""
 
   if asyncio.iscoroutinefunction(func):
     @wraps(func)
