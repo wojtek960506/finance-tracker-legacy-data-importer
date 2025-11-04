@@ -8,3 +8,9 @@ class ErrorResponse(BaseModel):
 
 class Count(BaseModel):
   count: int
+
+
+class CreateManyTransactions(BaseModel):
+  imported: int
+  skipped: int
+  errors: list[dict]

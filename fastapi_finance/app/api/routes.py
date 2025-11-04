@@ -1,13 +1,10 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File, Depends
+from fastapi import APIRouter, status, UploadFile, File, Depends
 from app.schema.transaction import (
   TransactionInDB,
   TransactionCreate,
   TransactionFullUpdate,
   TransactionPartialUpdate
 )
-from app.utils.mongodb_request import MongoDBRequest
-import csv
-from io import StringIO
 from app.decorators import show_execution_time
 from app.services.transaction_service import (
   get_all_transactions,
@@ -17,10 +14,12 @@ from app.services.transaction_service import (
   update_transaction,
   delete_transaction,
   delete_all_transactions,
+  create_many_transactions,
 )
+from app.services.csv_service import prepare_transactions_from_csv
 from app.db.database import Database
 from app.dependencies.db_dep import get_db
-from app.api.responses import Count
+from app.api.responses import Count, CreateManyTransactions
 
 
 router = APIRouter()
@@ -95,53 +94,11 @@ async def route_delete_all_transactions(db: Database = Depends(get_db)):
   return { "count": deleted_count }
 
 
-def normalize_csv_row(row: dict) -> dict:
-  normalized_row = {}
-  for key, value in row.items():
-    if value == '':
-      normalized_row[key] = None
-    else:
-      normalized_row[key] = value
-  return normalized_row
-
-
-@router.post("/import-csv")
+@router.post("/import-csv", response_model=CreateManyTransactions)
 @show_execution_time
-async def import_transactions_csv(request: MongoDBRequest, file: UploadFile = File(...)):
+async def route_import_transactions_csv(
+  db: Database = Depends(get_db), file: UploadFile = File(...)
+):
   """Create transactions based on the data in CSV"""
-  if not file.filename.endswith(".csv"):
-    raise HTTPException(
-      status_code=status.HTTP_400_BAD_REQUEST,
-      detail="Only CSV files are supported."
-    )
-  
-  db = request.app.mongodb
-  content = await file.read()
-  decoded = content.decode("utf-8")
-  csv_reader = csv.DictReader(StringIO(decoded))
-
-  valid_docs = []
-  errors = []
-
-  for i, row in enumerate(csv_reader, start=1):
-    try:
-      transaction = TransactionCreate(**normalize_csv_row(row))
-      valid_docs.append(transaction.model_dump(by_alias=True))
-    except Exception as e:     
-      errors.append({ "row": i, "error": str(e) })
-
-  if not valid_docs:
-    raise HTTPException(
-      status_code=status.HTTP_400_BAD_REQUEST, detail="No valid transactions found in CSV."
-    )
-  
-  inserted_ids = 0
-
-  result = await db.transactions.insert_many(valid_docs)
-  inserted_ids = len(result.inserted_ids)
-  
-  return {
-    "imported": inserted_ids,
-    "skipped": len(errors),
-    "errors": errors[:10]
-  }
+  valid_docs, errors = await prepare_transactions_from_csv(file)
+  return await create_many_transactions(db, valid_docs, errors)

@@ -8,6 +8,7 @@ from bson import ObjectId
 from fastapi import status
 from app.api.errors import AppError
 from app.db.database import Database
+from app.api.responses import CreateManyTransactions
 from datetime import datetime, timezone
 
 
@@ -80,4 +81,16 @@ async def delete_all_transactions(db: Database) -> int:
   result = await db.transactions.delete_many({})
   return result.deleted_count
 
+
+async def create_many_transactions(
+    db: Database,
+    transactions: list[TransactionCreate],
+    errors: list[dict]
+  ) -> CreateManyTransactions:
+  result = await db.transactions.insert_many(transactions)
+  return {
+    "imported": len(result.inserted_ids),
+    "skipped": len(errors),
+    "errors": errors[:10]
+  }
 
