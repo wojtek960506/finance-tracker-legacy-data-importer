@@ -6,8 +6,6 @@ from app.schema.transaction import (
   TransactionPartialUpdate
 )
 from app.utils.mongodb_request import MongoDBRequest
-from bson import ObjectId
-from datetime import datetime, timezone
 import csv
 from io import StringIO
 from app.decorators import show_execution_time
@@ -17,10 +15,12 @@ from app.services.transaction_service import (
   get_transaction,
   create_transaction,
   update_transaction,
+  delete_transaction,
+  delete_all_transactions,
 )
 from app.db.database import Database
 from app.dependencies.db_dep import get_db
-from pydantic import BaseModel
+from app.api.responses import Count
 
 
 router = APIRouter()
@@ -32,16 +32,12 @@ async def route_get_transactions(db: Database = Depends(get_db)):
   return await get_all_transactions(db)
 
 
-class Count(BaseModel):
-  count: int
-
 @router.get("/count", response_model=Count)
 @show_execution_time
 async def route_get_transactions_count(db: Database = Depends(get_db)):
   """Return number of all transactions stored in MongoDB."""
-  result = await get_all_transactions_count(db)
-
-  return { "count": result }
+  count = await get_all_transactions_count(db)
+  return { "count": count }
 
 
 @router.get("/{id}", response_model=TransactionInDB)
@@ -68,7 +64,8 @@ async def route_full_transaction_update(
   db: Database = Depends(get_db)
 ):
   """Full update transaction"""
-  return await update_transaction(db, id, transaction)
+  await update_transaction(db, id, transaction)
+  return await get_transaction(db, id)
 
 
 @router.patch("/{id}", response_model=TransactionInDB)
@@ -79,34 +76,23 @@ async def route_partial_transaction_update(
   db: Database = Depends(get_db)
 ):
   """Partial update of transaction"""
-  return await update_transaction(db, id, transaction)
+  await update_transaction(db, id, transaction)
+  return await get_transaction(db, id)
 
 
 @router.delete("/{id}")
 @show_execution_time
-async def delete_transaction(request: MongoDBRequest, id: str):
+async def route_delete_transaction(id: str, db: Database = Depends(get_db)):
   """Delete single transaction"""
-  db = request.app.mongodb
-  deleted = await db.transactions.find_one_and_delete({ "_id": ObjectId(id) })
-
-  if not deleted:
-    raise HTTPException(
-      status.HTTP_404_NOT_FOUND,
-      detail=f"Transaction with id: '{id}' not found"
-    )
-
-  deleted["_id"] = str(deleted["_id"])
-  return TransactionInDB.model_validate(deleted)
+  return await delete_transaction(db, id)
 
 
-@router.delete("/")
+@router.delete("/", response_model=Count)
 @show_execution_time
-async def delete_all_transactions(request: MongoDBRequest):
-  """Delete single transaction"""
-  db = request.app.mongodb
-  deleted = await db.transactions.delete_many({})
-
-  return { "deletedCount": deleted.deleted_count }
+async def route_delete_all_transactions(db: Database = Depends(get_db)):
+  """Delete all transactions"""
+  deleted_count = await delete_all_transactions(db)
+  return { "count": deleted_count }
 
 
 def normalize_csv_row(row: dict) -> dict:

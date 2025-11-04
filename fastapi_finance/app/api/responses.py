@@ -4,3 +4,7 @@ from typing import Optional, Any
 class ErrorResponse(BaseModel):
   message: str
   details: Optional[Any] = None
+
+
+class Count(BaseModel):
+  count: int

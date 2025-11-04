@@ -47,6 +47,8 @@ async def update_transaction(
   id: str,
   transaction: TransactionFullUpdate | TransactionPartialUpdate
 ):
+  """Update transaction. In case of no transaction with given `id`, error is thrown. Otherwise
+  full object of deleted transaction is returned."""
   doc = transaction.model_dump(
     by_alias=True,
     exclude_none=False,
@@ -54,11 +56,28 @@ async def update_transaction(
   )
   doc["updatedAt"] = datetime.now(timezone.utc)
 
-
   old = await db.transactions.find_one_and_update({ "_id": ObjectId(id)}, { "$set": doc })
   if not old:
-    message = f"Transaction with id: '{id}' not found"
+    message = f"Transaction with id: '{id}' not found, so not updated"
+    raise AppError(status.HTTP_404_NOT_FOUND, message)
+  return old
+
+
+async def delete_transaction(db: Database, id: str) -> TransactionInDB:
+  """Delete transaction. In case of no transaction with given `id`, error is thrown."""
+  deleted = await db.transactions.find_one_and_delete({ "_id": ObjectId(id) })
+
+  if not deleted:
+    message = f"Transaction with id: '{id}' not found, so not deleted" 
     raise AppError(status.HTTP_404_NOT_FOUND, message)
 
-  updated = await db.transactions.find_one({ "_id": old["_id"] })
-  return TransactionInDB.model_validate(normalize_id(updated))
+  deleted["_id"] = str(deleted["_id"])
+  return TransactionInDB.model_validate(deleted)
+
+
+# for testing purposes - later some authorization only for admin will be added
+async def delete_all_transactions(db: Database) -> int:
+  result = await db.transactions.delete_many({})
+  return result.deleted_count
+
+
