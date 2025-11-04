@@ -45,17 +45,6 @@ async def get_transaction_route(id: str, request: MongoDBRequest):
   result = await get_transaction(request.app.mongodb, id)
   return result
 
-  # db = request.app.mongodb
-
-  # transaction = await db.transactions.find_one({"_id": ObjectId(id)})
-  # if not transaction:
-  #   raise HTTPException(
-  #     status.HTTP_404_NOT_FOUND,
-  #     detail=f"Transaction with id: '{id}' not found"
-  #   )
-  # transaction["_id"] = str(transaction["_id"])
-  # return TransactionInDB.model_validate(transaction)
-
 
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
 @show_execution_time
