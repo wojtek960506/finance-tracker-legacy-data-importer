@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 from app.api.routes import router as api_router
-from app.services.db import init_db, close_db
+from app.db.client import init_db, close_db
 from app.utils.mongodb_fastapi import MongoDBFastAPI
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException

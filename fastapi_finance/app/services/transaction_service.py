@@ -1,17 +1,13 @@
-from motor.motor_asyncio import AsyncIOMotorDatabase, AsyncIOMotorCollection
-from app.schema.transaction import (
-  TransactionInDB
-)
+from app.schema.transaction import TransactionInDB
 from bson import ObjectId
-from fastapi import HTTPException, status
+from fastapi import status
 from app.api.errors import AppError
+from app.db.database import Database
 
-def get_transactions_collection(db: AsyncIOMotorDatabase) -> AsyncIOMotorCollection:
-  return db.transactions
 
-async def get_all_transactions(db: AsyncIOMotorDatabase) -> list[TransactionInDB]:
+async def get_all_transactions(db: Database) -> list[TransactionInDB]:
 
-  raw_transactions = await get_transactions_collection(db).find().to_list(length=None)
+  raw_transactions = await db.transactions.find().to_list(length=None)
   transactions = []
 
   for raw_transaction in raw_transactions:
@@ -26,13 +22,12 @@ async def get_all_transactions(db: AsyncIOMotorDatabase) -> list[TransactionInDB
   return transactions
 
 
-async def get_all_transactions_count(db: AsyncIOMotorDatabase) -> int:
-  result = await get_transactions_collection(db).count_documents({})
-  return result
+async def get_all_transactions_count(db: Database) -> int:
+  return await db.transactions.count_documents({})
 
 
-async def get_transaction(db: AsyncIOMotorDatabase, id: str) -> TransactionInDB:
-  transaction = await get_transactions_collection(db).find_one({"_id": ObjectId(id)})
+async def get_transaction(db: Database, id: str) -> TransactionInDB:
+  transaction = await db.transactions.find_one({"_id": ObjectId(id)})
 
   if not transaction:
     raise AppError(

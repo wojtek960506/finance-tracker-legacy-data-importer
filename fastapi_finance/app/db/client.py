@@ -1,5 +1,4 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from fastapi import FastAPI
 from app.core.config import settings
 from app.utils.mongodb_fastapi import MongoDBFastAPI
 

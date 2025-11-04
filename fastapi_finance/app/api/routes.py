@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Depends
 from app.schema.transaction import (
   TransactionInDB,
   TransactionCreate,
@@ -16,34 +16,37 @@ from app.services.transaction_service import (
   get_all_transactions_count,
   get_transaction
 )
+from app.db.database import Database
+from app.dependencies.db_dep import get_db
+from pydantic import BaseModel
 
 
 router = APIRouter()
 
 @router.get("/", response_model=list[TransactionInDB])
 @show_execution_time
-async def get_transactions_route(request: MongoDBRequest):
+async def route_get_transactions(db: Database = Depends(get_db)):
   """Return all transactions from MongoDB."""
-  transactions = await get_all_transactions(request.app.mongodb)
-
-  return transactions
+  return await get_all_transactions(db)
 
 
-@router.get("/count")
+class Count(BaseModel):
+  count: int
+
+@router.get("/count", response_model=Count)
 @show_execution_time
-async def get_transactions_count_route(request: MongoDBRequest):
+async def route_get_transactions_count(db: Database = Depends(get_db)):
   """Return number of all transactions stored in MongoDB."""
-  result = await get_all_transactions_count(request.app.mongodb)
+  result = await get_all_transactions_count(db)
 
   return { "count": result }
 
 
 @router.get("/{id}", response_model=TransactionInDB)
 @show_execution_time
-async def get_transaction_route(id: str, request: MongoDBRequest):
+async def route_get_transaction(id: str, db: Database = Depends(get_db)):
   """Return single transaction by id."""
-  result = await get_transaction(request.app.mongodb, id)
-  return result
+  return await get_transaction(db, id)
 
 
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
