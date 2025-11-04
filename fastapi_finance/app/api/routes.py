@@ -16,6 +16,7 @@ from app.services.transaction_service import (
   get_all_transactions_count,
   get_transaction,
   create_transaction,
+  update_transaction,
 )
 from app.db.database import Database
 from app.dependencies.db_dep import get_db
@@ -57,62 +58,28 @@ async def route_create_transaction(transaction: TransactionCreate, db: Database 
   return await create_transaction(db, transaction)
 
 
+# PUT and PATCH below calls the same method but the validation
+# is done based on the type of `transaction` type in definition
 @router.put("/{id}", response_model=TransactionInDB)
 @show_execution_time
-async def update_transaction_full(
-  request: MongoDBRequest,
+async def route_full_transaction_update(
   id: str,
-  transaction: TransactionFullUpdate
+  transaction: TransactionFullUpdate,
+  db: Database = Depends(get_db)
 ):
   """Full update transaction"""
-  db = request.app.mongodb
-  # exclude defaults and unset not to update value of `created_at` automatically
-  doc = transaction.model_dump(by_alias=True, exclude_defaults=True, exclude_unset=True)
-  doc["updatedAt"] = datetime.now(timezone.utc)
-
-  print('PUT:', doc)
-
-  old = await db.transactions.find_one_and_update({ "_id": ObjectId(id)}, { "$set": doc })
-  if not old:
-    raise HTTPException(
-      status.HTTP_404_NOT_FOUND,
-      detail=f"Transaction with id: '{id}' not found"
-    )
-
-  updated = await db.transactions.find_one({ "_id": old["_id"] })
-  updated["_id"] = str(updated["_id"])
-
-  return TransactionInDB.model_validate(updated)
+  return await update_transaction(db, id, transaction)
 
 
 @router.patch("/{id}", response_model=TransactionInDB)
 @show_execution_time
-async def update_transaction_full(
-  request: MongoDBRequest,
+async def route_partial_transaction_update(
   id: str,
-  transaction: TransactionPartialUpdate
+  transaction: TransactionPartialUpdate,
+  db: Database = Depends(get_db)
 ):
   """Partial update of transaction"""
-  db = request.app.mongodb
-  doc = transaction.model_dump(
-    by_alias=True,
-    exclude_none=True,
-    exclude_unset=True,
-    exclude_defaults=True
-  )
-  doc["updatedAt"] = datetime.now(timezone.utc)
-
-  old = await db.transactions.find_one_and_update({ "_id": ObjectId(id)}, { "$set": doc })
-  if not old:
-    raise HTTPException(
-      status.HTTP_404_NOT_FOUND,
-      detail=f"Transaction with id: '{id}' not found"
-    )
-
-  updated = await db.transactions.find_one({ "_id": old["_id"] })
-  updated["_id"] = str(updated["_id"])
-
-  return TransactionInDB.model_validate(updated)
+  return await update_transaction(db, id, transaction)
 
 
 @router.delete("/{id}")

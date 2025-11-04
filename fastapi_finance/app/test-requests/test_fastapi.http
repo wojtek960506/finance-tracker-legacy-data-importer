@@ -24,7 +24,10 @@ Content-Type: application/json
   "category": "transport",
   "transactionType": "expense",
   "paymentMethod": "card",
-  "account": "mBank"
+  "account": "mBank",
+  "currencies": "ABC/DEF",
+  "exchangeRate": 1.6,
+  "calcRefIdx": 1
 }
 
 ### Get single transaction
@@ -40,7 +43,7 @@ PUT {{baseUrl}}/transactions/{{newTransactionId}}
 Content-Type: application/json
 
 { 
-  "idx": 567,
+  "idx": 565,
   "date": "2015-09-24",
   "description": "ASEC W-wa Ratusz Ar/Warszawa some change",
   "amount": 2.70,
@@ -49,9 +52,8 @@ Content-Type: application/json
   "transactionType": "expense",
   "paymentMethod": "card",
   "account": "mBank",
-  "currencies": "ABC/DEF",
-  "exchangeRate": 1.6,
-  "calcRefIdx": 1
+  "currencies":null
+  
 }
 
 ### Partial update of transaction (PATCH)
@@ -60,7 +62,8 @@ Content-Type: application/json
 
 {
   "description": "ASEC W-wa Ratusz Ar/Warszawa another change",
-  "amount": 7.77
+  "amount": 7.77,
+  "currencies": null
 }
 
 ### Delete a transaction

@@ -7,6 +7,7 @@ from pydantic import (
   field_serializer
 )
 from pydantic_partial import PartialModelMixin
+from pydantic_core import PydanticCustomError
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -36,7 +37,10 @@ class TransactionBase(BaseModel):
   @classmethod
   def amount_must_be_positive(cls, value):
     if value < 0:
-      raise ValueError("Amount must be greater than zero")
+      raise PydanticCustomError(
+        "amount_less_than_zero",
+        "Amount must be greater than zero"
+      )
     return value
   
   model_config = ConfigDict(populate_by_name=True)
@@ -51,7 +55,8 @@ class TransactionCreate(TransactionBase, PartialModelMixin):
     provided = [v is not None for v in related]
 
     if any(provided) and not all(provided):
-      raise ValueError(
+      raise PydanticCustomError(
+        "exchange_group_incomplete",
         "Values for 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
       )
     return self

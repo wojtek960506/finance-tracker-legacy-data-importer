@@ -4,6 +4,7 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from .responses import ErrorResponse
 
+
 class AppError(Exception):
   """Base class for application-level errors."""
   def __init__(self, status_code: int, message: str, details=None):
@@ -34,7 +35,10 @@ async def app_error_handler(_: Request, exc: AppError):
 async def validation_error_handler(_: Request, exc: RequestValidationError):
   return JSONResponse(
     status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-    content=ErrorResponse(message="Validation failed", details=exc.errors()).model_dump()
+    content=ErrorResponse(
+      message="Validation failed",
+      details=exc.errors()
+    ).model_dump()
   )
 
 
