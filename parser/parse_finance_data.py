@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from normalize_selector_columns import normalize_selector_columns
 
 
 def get_full_date(df: pd.DataFrame, year: int = None):
@@ -137,6 +138,10 @@ def parse_finance_spreadsheet(
   if year is not None:
     df_expenses.insert(loc=4, column="currency", value="PLN")
     df_incomes.insert(loc=4, column="currency", value="PLN")
+
+  # normalize values in columns which are "selector-based"
+  normalize_selector_columns(df_expenses)
+  normalize_selector_columns(df_incomes)
 
   # save prepared data frames to separate CSV files
   df_expenses.to_csv(expenses_file, index=False, encoding="utf-8")
