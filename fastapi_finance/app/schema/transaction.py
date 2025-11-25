@@ -33,6 +33,7 @@ class TransactionBase(BaseModel):
     default_factory=lambda: datetime.now(timezone.utc),
     alias="updatedAt"
   )
+  ownerId: str
 
   @field_validator("amount")
   @classmethod

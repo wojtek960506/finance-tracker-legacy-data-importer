@@ -30,9 +30,13 @@ async def prepare_transactions_from_csv(
 
   for i, row in enumerate(csv_reader, start=1):
     try:
-      transaction = TransactionCreate(**normalize_csv_row(row))
+      transaction = TransactionCreate(
+        **normalize_csv_row(row),
+        # id of w@z.pl user - TODO pass it as argument
+        ownerId="692192583e96407ebe1ac1ca"
+      )
       valid_docs.append(transaction.model_dump(by_alias=True))
-    except ValidationError as e:     
+    except ValidationError as e:
       errors.append({ "row": i, "error": e.errors() })
 
   if not valid_docs:
