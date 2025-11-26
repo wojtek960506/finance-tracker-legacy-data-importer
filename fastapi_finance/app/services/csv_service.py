@@ -1,4 +1,5 @@
 import csv
+from bson import ObjectId
 from io import StringIO
 from fastapi import UploadFile, status
 from app.api.errors import AppError
@@ -33,7 +34,7 @@ async def prepare_transactions_from_csv(
       transaction = TransactionCreate(
         **normalize_csv_row(row),
         # id of w@z.pl user - TODO pass it as argument
-        ownerId="692192583e96407ebe1ac1ca"
+        ownerId=ObjectId("692192583e96407ebe1ac1ca")
       )
       valid_docs.append(transaction.model_dump(by_alias=True))
     except ValidationError as e:

@@ -10,6 +10,7 @@ from pydantic_partial import PartialModelMixin
 from pydantic_core import PydanticCustomError
 from datetime import datetime, timezone
 from typing import Optional
+from bson import ObjectId
 
 
 class TransactionBase(BaseModel):
@@ -33,7 +34,7 @@ class TransactionBase(BaseModel):
     default_factory=lambda: datetime.now(timezone.utc),
     alias="updatedAt"
   )
-  ownerId: str
+  ownerId: ObjectId
 
   @field_validator("amount")
   @classmethod
@@ -45,7 +46,11 @@ class TransactionBase(BaseModel):
       )
     return value
   
-  model_config = ConfigDict(populate_by_name=True)
+  model_config = ConfigDict(
+    populate_by_name=True,
+    json_encoders={ ObjectId: str },
+    arbitrary_types_allowed=True
+  )
   
 
 class TransactionCreate(TransactionBase, PartialModelMixin):
