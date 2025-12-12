@@ -10,7 +10,8 @@ account_map = {
   "mBank": "mBank",
   "CardByCliq": "cardByCliq",
   "Alior": "aliorBank",
-  "Gotówka": "cash"
+  "Gotówka": "cash",
+  "Credit Agricole": "creditAgricole"
 }
 
 category_map = {

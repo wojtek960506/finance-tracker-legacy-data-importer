@@ -1,11 +1,11 @@
 from pathlib import Path
 import pandas as pd
 
+def calculate_single_file_exchange_refs(filename: str, should_print: bool = False):
 
-def calculate_exchange_refs(should_print=False):
-  DATA_DIR = Path(__file__).resolve().parents[0] / "data" / "2015_2024_foreign"
-  EXPENSES_FILE = DATA_DIR / "finance_expenses_2015_2024_foreign.csv"
-  INCOMES_FILE = DATA_DIR / "finance_incomes_2015_2024_foreign.csv"
+  DATA_DIR = Path(__file__).resolve().parents[0] / "data" / filename
+  EXPENSES_FILE = DATA_DIR / f"finance_expenses_{filename}.csv"
+  INCOMES_FILE = DATA_DIR / f"finance_incomes_{filename}.csv"
 
   df_incomes = pd.read_csv(INCOMES_FILE)
   df_expenses = pd.read_csv(EXPENSES_FILE)
@@ -16,7 +16,40 @@ def calculate_exchange_refs(should_print=False):
   income_row = df_incomes.iloc[index_incomes]
   expense_row = df_expenses.iloc[index_expenses]
 
-  while index_incomes < len(df_incomes) and index_expenses < len(df_expenses):
+  while index_incomes < len(df_incomes) or index_expenses < len(df_expenses):
+
+    # in case of ony indexes out of range we continue traversing through the other 
+    # set of data to detect potential rows with currencies and exchange rate
+    # which are not of type "exchage" - such case is possible when f.e. in Revolut
+    # I have only one currency and money is taken from this account even when I pay
+    # in other currency and then there is some exchange - but such transaction is
+    # not of type "exchange". And for now I am doing it in the same loop to avoiding
+    # traversing once again through the whole set
+    if (index_incomes < len(df_incomes) and index_expenses >= len(df_expenses)):
+      income_row = df_incomes.iloc[index_incomes]
+      exchange_rate_i = income_row["exchange_rate"]
+      currencies_i = income_row["currencies"]
+      category_i = income_row["category"]
+      
+      if not pd.isna(exchange_rate_i) and not pd.isna(currencies_i) and category_i != "exchange":
+        df_incomes.at[index_incomes, "calc_ref_idx"] = -1
+
+      index_incomes += 1
+      continue
+
+    if (index_expenses < len(df_expenses) and index_incomes >= len(df_incomes)):
+      expense_row = df_expenses.iloc[index_expenses]
+      exchange_rate_e = expense_row["exchange_rate"]
+      currencies_e = expense_row["currencies"]
+      category_e = expense_row["category"]
+
+      if not pd.isna(exchange_rate_e) and not pd.isna(currencies_e) and category_e != "exchange":
+        df_expenses.at[index_expenses, "calc_ref_idx"] = -1
+        
+      index_expenses += 1
+      continue
+
+    # normal flow of the loop when we traverse through both
     expense_row = df_expenses.iloc[index_expenses]
     income_row = df_incomes.iloc[index_incomes]
 
@@ -27,12 +60,16 @@ def calculate_exchange_refs(should_print=False):
     currency_e = expense_row["currency"]
     amount_e = expense_row["amount"]
 
+    category_e = expense_row["category"]
+
     idx_i = income_row["idx"]
     date_i = income_row["date"]
     exchange_rate_i = income_row["exchange_rate"]
     currencies_i = income_row["currencies"]
     currency_i = income_row["currency"]
     amount_i = income_row["amount"]
+
+    category_i = income_row["category"]
 
     if (
       date_i == date_e and
@@ -43,9 +80,7 @@ def calculate_exchange_refs(should_print=False):
         (amount_e > amount_i and currencies_e != f"{currency_i}/{currency_e}") or
         (amount_i > amount_e and currencies_e != f"{currency_e}/{currency_i}")
       ):
-        print(idx_e)
-        print(idx_i)
-        raise Exception("wrong 'currencies' value")
+        raise Exception(f"wrong 'currencies' value in file '{filename}'")
       
       df_incomes.at[index_incomes, "calc_ref_idx"] = idx_e
       df_expenses.at[index_expenses, "calc_ref_idx"] = idx_i 
@@ -54,6 +89,25 @@ def calculate_exchange_refs(should_print=False):
       index_incomes += 1
       num_of_refs += 1
       continue
+
+    # reference always have category `exchange`, so in case of any other category
+    # with `exchange_rate` and `currencies`, `calc_ref_idx` is set to -1
+    # and we increase the index
+
+    should_continue = False
+
+    if not pd.isna(exchange_rate_e) and not pd.isna(currencies_e) and category_e != "exchange":
+      df_expenses.at[index_expenses, "calc_ref_idx"] = -1
+      index_expenses += 1
+      should_continue = True
+    if not pd.isna(exchange_rate_i) and not pd.isna(currencies_i) and category_i != "exchange":
+      df_incomes.at[index_incomes, "calc_ref_idx"] = -1
+      index_incomes += 1
+      should_continue = True
+
+    if should_continue:
+      continue
+
 
     # if current row in any dataframe cannot be refernce just go to the next one
     if pd.isna(exchange_rate_e) and pd.isna(currencies_e):
@@ -66,8 +120,12 @@ def calculate_exchange_refs(should_print=False):
   df_incomes.to_csv(INCOMES_FILE, index=False, encoding="utf-8")
 
   if (should_print):
-    print("number of references added:", num_of_refs)
+    print(f"number of references added in file '{filename}':", num_of_refs)
 
+
+def calculate_exchange_refs(should_print=False):
+  calculate_single_file_exchange_refs("2015_2024_foreign", should_print)
+  calculate_single_file_exchange_refs("2025_foreign", should_print)
   print('calculating exchange refs done')
 
 

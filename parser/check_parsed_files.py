@@ -46,8 +46,9 @@ def check_parsed_files(should_print=False):
     "transaction_type": set(),
   }
 
-  names: list[int | str] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2026))
   names.append("2015_2024_foreign")
+  names.append("2025_foreign")
 
   for name in names:
     EXPENSES_FILE = DATA_DIR / f"{name}" / f"finance_expenses_{name}.csv"

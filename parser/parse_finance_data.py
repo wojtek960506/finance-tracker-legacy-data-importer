@@ -152,8 +152,9 @@ def parse_finance_spreadsheet(
 
 
 def parse_finance_data(should_print= False):
-  names: list[int | str] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2026))
   names.append("2015_2024_foreign")
+  names.append("2025_foreign")
   
   for name in names:
     DATA_DIR = Path(__file__).resolve().parents[0] / "data" / f"{name}"

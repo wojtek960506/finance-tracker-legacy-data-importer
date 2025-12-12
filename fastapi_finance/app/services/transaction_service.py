@@ -88,9 +88,44 @@ async def create_many_transactions(
     errors: list[dict]
   ) -> CreateManyTransactions:
   result = await db.transactions.insert_many(transactions)
+
+  def serialize_object_id_if_any(obj):
+    # owner id has to be serialized to string because when it is passed as bson.ObjectId,
+    # then such error is thrown: "pydantic_core._pydantic_core.PydanticSerializationError:
+    # Unable to serialize unknown type: <class 'bson.objectid.ObjectId'>""
+
+    error = obj.get('error')
+    if error is None:
+      print('isNone')
+      return obj
+
+    new_error_arr = []
+
+    for e in error:
+      input_dict = e.get("input")
+      if input_dict is None:
+        new_error_arr.append(e)
+      else:
+        input_dict = dict(input_dict)
+        ownerId = input_dict.get('ownerId')
+        if ownerId is None:
+          new_error_arr.append(e)
+        else:
+          input_dict['ownerId'] = str(input_dict['ownerId'])
+          e['input'] = input_dict
+          new_error_arr.append(e)
+
+    obj['error'] = new_error_arr
+    return obj
+
+  errors = list(map(serialize_object_id_if_any, errors[:10]))
+
+
+  # when we have some errors and there is an ObjectId there as bson, then the Internal
+  # Server error is thrown, because serializer is not able to serialize it
   return {
     "imported": len(result.inserted_ids),
     "skipped": len(errors),
-    "errors": errors[:10]
+    "errors": errors
   }
 

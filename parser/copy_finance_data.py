@@ -21,8 +21,9 @@ def copy_original_finance_spreadsheet(name: str, should_print: bool):
 
 
 def copy_finance_data(should_print: bool = False):
-  names: list[int | str] = list(range(2015,2025))
+  names: list[int | str] = list(range(2015,2026))
   names.append("2015_2024_foreign")
+  names.append("2025_foreign")
 
   for name in names:
     copy_original_finance_spreadsheet(name, should_print)
