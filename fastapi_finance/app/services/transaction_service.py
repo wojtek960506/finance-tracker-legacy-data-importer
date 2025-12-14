@@ -118,7 +118,7 @@ async def create_many_transactions(
     obj['error'] = new_error_arr
     return obj
 
-  errors = list(map(serialize_object_id_if_any, errors[:10]))
+  errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
 
 
   # when we have some errors and there is an ObjectId there as bson, then the Internal
@@ -126,6 +126,6 @@ async def create_many_transactions(
   return {
     "imported": len(result.inserted_ids),
     "skipped": len(errors),
-    "errors": errors
+    "errors": errors_to_show
   }
 

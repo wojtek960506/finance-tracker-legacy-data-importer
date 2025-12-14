@@ -35,6 +35,9 @@ class TransactionBase(BaseModel):
     alias="updatedAt"
   )
   ownerId: ObjectId
+  real_idx: float = Field(..., alias="realIdx")
+  real_idx_ref: Optional[float] = Field(None, alias="realIdxRef")
+
 
   @field_validator("amount")
   @classmethod
@@ -56,16 +59,32 @@ class TransactionBase(BaseModel):
 class TransactionCreate(TransactionBase, PartialModelMixin):
   """Schema for creating a new transaction."""
   @model_validator(mode="after")
-  def validate_exchange(self):
-    """If any of 3 fields is set then all must be set."""
-    related = [self.currencies, self.exchange_rate, self.calc_ref_idx]
-    provided = [v is not None for v in related]
+  def validate_other_currency_transaction(self):
 
-    if any(provided) and not all(provided):
-      raise PydanticCustomError(
-        "exchange_group_incomplete",
-        "Values for 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
-      )
+    if (self.category == "exchange"):
+      # when type is exchange then we need all 3 fields together
+      related = [self.currencies, self.exchange_rate, self.calc_ref_idx]
+      provided = [v is not None for v in related]
+
+      if any(provided) and not all(provided):
+        raise PydanticCustomError(
+          "exchange_group_incomplete",
+          "Values for 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
+        )
+    
+    else:
+      # when type is not exchange and we have some other currency fields
+      # then they have to be together
+      related = [self.currencies, self.exchange_rate]
+      provided = [v is not None for v in related]
+
+      if any(provided) and not all(provided):
+        raise PydanticCustomError(
+          "other_currency_group_incomplete",
+          "Values for 'currencies' and 'exchange_rate' must be provided together"
+          " when any of them is specified for foreign transaction"
+        )
+
     return self
   pass
 
