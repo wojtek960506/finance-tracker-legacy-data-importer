@@ -10,6 +10,7 @@ from app.api.errors import AppError
 from app.db.database import Database
 from app.api.responses import CreateManyTransactions
 from datetime import datetime, timezone
+from pymongo import UpdateOne
 
 
 def normalize_id(transaction):
@@ -82,44 +83,70 @@ async def delete_all_transactions(db: Database) -> int:
   return result.deleted_count
 
 
+def serialize_object_id_if_any(obj):
+  # owner id has to be serialized to string because when it is passed as bson.ObjectId,
+  # then such error is thrown: "pydantic_core._pydantic_core.PydanticSerializationError:
+  # Unable to serialize unknown type: <class 'bson.objectid.ObjectId'>""
+
+  error = obj.get('error')
+  if error is None:
+    print('isNone')
+    return obj
+
+  new_error_arr = []
+
+  for e in error:
+    input_dict = e.get("input")
+    if input_dict is None:
+      new_error_arr.append(e)
+    else:
+      input_dict = dict(input_dict)
+      ownerId = input_dict.get('ownerId')
+      if ownerId is None:
+        new_error_arr.append(e)
+      else:
+        input_dict['ownerId'] = str(input_dict['ownerId'])
+        e['input'] = input_dict
+        new_error_arr.append(e)
+
+  obj['error'] = new_error_arr
+  return obj
+
 async def create_many_transactions(
     db: Database,
     transactions: list[TransactionCreate],
     errors: list[dict]
   ) -> CreateManyTransactions:
-  result = await db.transactions.insert_many(transactions)
 
-  def serialize_object_id_if_any(obj):
-    # owner id has to be serialized to string because when it is passed as bson.ObjectId,
-    # then such error is thrown: "pydantic_core._pydantic_core.PydanticSerializationError:
-    # Unable to serialize unknown type: <class 'bson.objectid.ObjectId'>""
+  result = await db.transactions.insert_many(transactions)  
 
-    error = obj.get('error')
-    if error is None:
-      print('isNone')
-      return obj
+  # UPDATE TRANSACTIONS WITH REFERENCES AS `_id` VALUES FROM DB
+  
+  real_idx_to_id = {
+    t["realIdx"]: result.inserted_ids[i]
+    for i,t in enumerate(transactions)
+  }
 
-    new_error_arr = []
+  # prepare bulk updates
+  updates = []
 
-    for e in error:
-      input_dict = e.get("input")
-      if input_dict is None:
-        new_error_arr.append(e)
-      else:
-        input_dict = dict(input_dict)
-        ownerId = input_dict.get('ownerId')
-        if ownerId is None:
-          new_error_arr.append(e)
-        else:
-          input_dict['ownerId'] = str(input_dict['ownerId'])
-          e['input'] = input_dict
-          new_error_arr.append(e)
+  for t in transactions:
+    ref = t.get("realIdxRef")
+    if not ref:
+      continue
 
-    obj['error'] = new_error_arr
-    return obj
+    updates.append(
+      UpdateOne(
+        {"_id": real_idx_to_id[t["realIdx"]]},
+        {"$set": {"exchangeRefId": real_idx_to_id[ref]}}
+      )
+    )
+
+  # execute updates
+  if updates:
+    await db.transactions.bulk_write(updates)
 
   errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
-
 
   # when we have some errors and there is an ObjectId there as bson, then the Internal
   # Server error is thrown, because serializer is not able to serialize it
