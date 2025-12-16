@@ -4,3 +4,4 @@ class Database:
   def __init__(self, db: AsyncIOMotorDatabase):
     self._db = db
     self.transactions: AsyncIOMotorCollection = db.transactions
+    self.counters: AsyncIOMotorCollection = db.counters

@@ -118,8 +118,16 @@ async def create_many_transactions(
     errors: list[dict]
   ) -> CreateManyTransactions:
 
+  if len(transactions) == 0:
+    return {
+      "imported": 0,
+      "skipped": 0,
+      "errors": []
+    }
+
   result = await db.transactions.insert_many(transactions)  
 
+  # ##################################################################
   # UPDATE TRANSACTIONS WITH REFERENCES AS `_id` VALUES FROM DB
   n_source_index = "sourceIndex"
   n_source_ref_index = "sourceRefIndex"
@@ -147,6 +155,23 @@ async def create_many_transactions(
   # execute updates
   if updates:
     await db.transactions.bulk_write(updates)
+  # ##################################################################
+
+  # ------------------------------------------------------------------
+  # store the max `source_index` to properly add new transaction
+  owner_id = transactions[0]["ownerId"]
+  max_source_index = await db.transactions.find_one(
+    { "ownerId": owner_id },
+    sort=[("sourceIndex", -1)],
+    projection={"sourceIndex": 1}
+  )
+  start = max_source_index["sourceIndex"] if max_source_index else 0
+  await db.counters.update_one(
+    {"_id": {"type": "transactions", "userId": owner_id}},
+    {"$set": {"seq": start}},
+    upsert=True
+  )
+  # ------------------------------------------------------------------
 
   errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
 
