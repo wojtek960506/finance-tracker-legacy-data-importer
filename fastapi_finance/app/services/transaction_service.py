@@ -121,9 +121,11 @@ async def create_many_transactions(
   result = await db.transactions.insert_many(transactions)  
 
   # UPDATE TRANSACTIONS WITH REFERENCES AS `_id` VALUES FROM DB
-  
+  n_source_index = "sourceIndex"
+  n_source_ref_index = "sourceRefIndex"
+
   real_idx_to_id = {
-    t["realIdx"]: result.inserted_ids[i]
+    t[n_source_index]: result.inserted_ids[i]
     for i,t in enumerate(transactions)
   }
 
@@ -131,14 +133,14 @@ async def create_many_transactions(
   updates = []
 
   for t in transactions:
-    ref = t.get("realIdxRef")
+    ref = t.get(n_source_ref_index)
     if not ref:
       continue
 
     updates.append(
       UpdateOne(
-        {"_id": real_idx_to_id[t["realIdx"]]},
-        {"$set": {"exchangeRefId": real_idx_to_id[ref]}}
+        {"_id": real_idx_to_id[t[n_source_index]]},
+        {"$set": {"refId": real_idx_to_id[ref]}}
       )
     )
 

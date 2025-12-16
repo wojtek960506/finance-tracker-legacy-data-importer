@@ -14,7 +14,6 @@ from bson import ObjectId
 
 
 class TransactionBase(BaseModel):
-  idx: Optional[int] = None
   date: datetime
   description: str
   amount: float
@@ -24,7 +23,6 @@ class TransactionBase(BaseModel):
   account: str
   exchange_rate: Optional[float] = Field(None, alias="exchangeRate")
   currencies: Optional[str] = None
-  calc_ref_idx: Optional[int] = Field(None, alias="calcRefIdx")
   transaction_type: str = Field(..., alias="transactionType")
   created_at: Optional[datetime] = Field(
     default_factory=lambda: datetime.now(timezone.utc),
@@ -35,8 +33,8 @@ class TransactionBase(BaseModel):
     alias="updatedAt"
   )
   ownerId: ObjectId
-  real_idx: float = Field(..., alias="realIdx")
-  real_idx_ref: Optional[float] = Field(None, alias="realIdxRef")
+  source_index: int = Field(..., alias="sourceIndex")
+  source_ref_index: Optional[int] = Field(None, alias="sourceRefIndex")
 
 
   @field_validator("amount")
@@ -63,13 +61,13 @@ class TransactionCreate(TransactionBase, PartialModelMixin):
 
     if (self.category == "exchange"):
       # when type is exchange then we need all 3 fields together
-      related = [self.currencies, self.exchange_rate, self.calc_ref_idx]
+      related = [self.currencies, self.exchange_rate, self.source_ref_index]
       provided = [v is not None for v in related]
 
       if any(provided) and not all(provided):
         raise PydanticCustomError(
           "exchange_group_incomplete",
-          "Values for 'currencies', 'exchange_rate' and 'calc_ref_idx' must be provided together"
+          "Values for 'currencies', 'exchange_rate' and 'source_ref_index' must be provided together"
         )
     
     else:
