@@ -122,7 +122,8 @@ async def create_many_transactions(
     return {
       "imported": 0,
       "skipped": 0,
-      "errors": []
+      "errors": [],
+      "updateErrors": [],
     }
 
   result = await db.transactions.insert_many(transactions)  
@@ -139,18 +140,25 @@ async def create_many_transactions(
 
   # prepare bulk updates
   updates = []
+  update_errors = []
 
   for t in transactions:
     ref = t.get(n_source_ref_index)
     if not ref:
       continue
 
-    updates.append(
-      UpdateOne(
-        {"_id": real_idx_to_id[t[n_source_index]]},
-        {"$set": {"refId": real_idx_to_id[ref]}}
+    try:
+      updates.append(
+        UpdateOne(
+          {"_id": real_idx_to_id[t[n_source_index]]},
+          {"$set": {"refId": real_idx_to_id[ref]}}
+        )
       )
-    )
+    except KeyError as err:
+      update_errors.append({
+        "sourceIndex": t[n_source_index],
+        "error": f"Broken 'sourceRefIndex' - {str(err)}"
+      })
 
   # execute updates
   if updates:
@@ -180,6 +188,7 @@ async def create_many_transactions(
   return {
     "imported": len(result.inserted_ids),
     "skipped": len(errors),
-    "errors": errors_to_show
+    "errors": errors_to_show,
+    "updateErrors": update_errors,
   }
 

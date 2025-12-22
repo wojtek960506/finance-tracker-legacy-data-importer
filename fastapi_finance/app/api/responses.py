@@ -14,3 +14,4 @@ class CreateManyTransactions(BaseModel):
   imported: int
   skipped: int
   errors: list[dict]
+  updateErrors: list[dict]

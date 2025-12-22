@@ -84,10 +84,18 @@ Content-Type: multipart/form-data; boundary=boundary123
 Content-Disposition: form-data; name="file"; filename="finance_all.csv"
 Content-Type: text/csv
 
-< ../../../parser/data/all/finance_all.csv
+< ../../../parser/data/all/transactions-backup-qwer-2025-12-22T21-11-34-725Z.csv
 --boundary123--
 
 
+# migrated data which works well
+# transactions-backup-2025-12-22T21-38-42-725Z.csv
+
+# migrated data with broken reference
+# transactions-backup-qwer-2025-12-22T21-11-34-725Z.csv
+
+# data parsed from spredsheets
+# finance_all.csv
 
 # All expenses and incomes 8429 (till end of 2024)
 # All expenses 7159
