@@ -48,8 +48,6 @@ def calculate_invalid_my_account_transactions(tmp_df):
   return invalid_amounts
 
 def sort_group_manually(group):
-  # TODO add logic for sorting transaction when many are in one day
-  # not to have broken refs
   accounts = [
     "pekao",
     "veloBank",
@@ -58,18 +56,84 @@ def sort_group_manually(group):
     "revolut",
     "mBank",
     "cardByCliq",
-    "aliorBank",
     "cash",
     "creditAgricole",
   ]
 
-  return group
+  if len(group) == 0:
+    return group
+
+  group_expense = group[group["transaction_type"] == "expense"]
+  group_income = group[group["transaction_type"] == "income"]
+
+  if len(group_expense) != len(group_income):
+    raise ValueError(
+      'there should be the same number of expenses and incomes within group (the same amount)'
+    )
+
+  from_to_pairs = []
+
+  for row in group_expense.itertuples(index=False):
+    desc = row.description
+    desc = desc.replace(" ", "")
+    desc = desc.lower()
+  
+    from_account = ""
+    from_index = len(desc)
+    for account in accounts:
+      account = account.lower()
+      index = desc.find(account)
+      if index != -1 and index < from_index:
+        from_index = index
+        from_account = account
+
+    to_account = ""
+    for account in accounts:
+      account = account.lower()
+      index = desc.find(account, from_index + len(from_account))
+      if index != -1:
+        to_account = account
+        break
+
+    if (from_account == "" or to_account == ""):
+      print('ERRORO ERRORO ERRORO ERRORO')
+      print('desc', desc)
+
+    from_to_pairs.append((from_account, to_account))
+  
+  remaining_incomes = group_income.copy()
+  sorted_group_incomes = []
+
+  for _, to_acc in from_to_pairs:
+    mask = (
+      remaining_incomes["account"]
+      .str.lower()
+      .str.replace(" ", "")
+      == to_acc
+    )
+
+    if not mask.any():
+        raise ValueError(f"No income found for account '{to_acc}'")
+    
+    # take the first matching income
+    row = remaining_incomes[mask].iloc[0]
+    sorted_group_incomes.append(row)
+
+    # REMOVE it so it cannot be reused
+    remaining_incomes = remaining_incomes.drop(row.name)
+  
+
+  sorted_df = pd.DataFrame(sorted_group_incomes)
+  result = pd.concat([group_expense, sorted_df], ignore_index=True)
+
+  return result
 
 def update_data_frames_with_references(df_expenses, df_incomes):
   if len(df_expenses) != len(df_incomes):
-    print('references for money transfers cannot be added')
-    print('number of expenses should be the same as number of incomes')
-    return None
+    raise ValueError(
+      'references for money transfers cannot be added' +
+      'number of expenses should be the same as number of incomes'
+    )
   
   for i in range(len(df_expenses)):
     df_expenses.loc[i, "source_ref_index"] = df_incomes.loc[i, "source_index"]
@@ -96,9 +160,10 @@ def add_transfer_references(should_print=False):
 
   invalid_amounts = calculate_invalid_my_account_transactions(tmp_df)
   if len(invalid_amounts) > 0:
-    print('invalid amounts: ', invalid_amounts)
-    print('references of money transfers cannot be added')
-    return
+    raise ValueError(
+      f"invalid amounts: {invalid_amounts}" +
+      'references of money transfers cannot be added'
+    )
 
   out = []
 
@@ -108,8 +173,8 @@ def add_transfer_references(should_print=False):
       out.append(group)
       continue
 
-    group_to_sort_manually = group[group["description"].str.startswith("Przelew")]
-    group_properly_sorted = group[~group["description"].str.startswith("Przelew")]
+    group_to_sort_manually = group[group["description"].str.startswith("Przelew z")]
+    group_properly_sorted = group[~group["description"].str.startswith("Przelew z")]
 
     out.append(group_properly_sorted)
     out.append(sort_group_manually(group_to_sort_manually))
@@ -125,7 +190,7 @@ def add_transfer_references(should_print=False):
   
   if df_my_account_with_refs is None:
     return
-  
+
   # create a mapping: source_index → source_ref_index
   mapping = df_my_account_with_refs.set_index("source_index")["source_ref_index"]
 
