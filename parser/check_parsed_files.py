@@ -30,6 +30,9 @@ def get_values_for_selectors(df: pd.DataFrame, columns_values: dict[str, set[str
 def save_to_file(column_name: str, values: set[str]):
   file_path = DATA_DIR / "all" / "selector_values" / f"{column_name}_values.txt"
 
+  # when the path does not exist then it is created
+  file_path.parent.mkdir(parents=True, exist_ok=True)
+
   with open(file_path, "w", encoding="utf-8") as f:
     for value in values:
       f.write(value + "\n")

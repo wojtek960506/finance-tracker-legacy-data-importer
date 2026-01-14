@@ -9,6 +9,9 @@ def execute_copying(path_1: str, path_2: str, should_print: bool):
     print(path_2)
 
   if path_1.exists():
+    # when the target path (path_2) does not exist then it is created
+    path_2.parent.mkdir(parents=True, exist_ok=True)
+
     if should_print:
       print("copying")
     subprocess.run(["cp", str(path_1), str(path_2)], check=True)
