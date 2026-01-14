@@ -1,0 +1,16 @@
+.env
+
+node_modules/
+
+dist/
+
+coverage/
+
+.venv
+venv
+.venv_new
+venv_new
+
+parser/data/
+
+__pycache__/
