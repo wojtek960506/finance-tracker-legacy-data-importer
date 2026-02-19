@@ -14,28 +14,32 @@ account_map = {
   "Credit Agricole": "creditAgricole"
 }
 
+# `myAccount` and `exchange` are system categories so they need to be mapped exactly to its keys
+# in the API. The rest are user categories and they are available only for given user
+# I will keep their names in Polish and for now they will not be translated to any other
+# language
 category_map = {
-  "Jedzenie": "food",
-  "Inwestycje": "investments",
-  "Wymiana": "exchange",
-  "Moje konto": "myAccount",
-  "Transport": "transport",
-  "Zwrot": "refund",
-  "Ubrania": "clothing",
-  "Wpłatomat": "cashDepositMachine",
-  "Noclegi": "accommodation",
-  "Darowizna": "donation",
-  "Meble": "furniture",
-  "Rozrywka": "entertainment",
-  "Zdrowie": "health",
-  "Praca": "work",
-  "Sport": "sport",
-  "Inne": "other",
-  "Edukacja": "education",
-  "Elektronika": "electronics",
-  "Bankomat": "atm",
-  "Allegro": "allegro",
-  "Media": "utilities"
+  "Jedzenie": "Jedzenie",       # Food
+  "Inwestycje": "Inwestycje",   # Investments
+  "Wymiana": "exchange",        # system category
+  "Moje konto": "myAccount",    # system category
+  "Transport": "Transport",     # Transport
+  "Zwrot": "Zwrot",             # Refund
+  "Ubrania": "Ubrania",         # Clothing
+  "Wpłatomat": "Wpłatomat",     # Cash Deposit Machine
+  "Noclegi": "Noclegi",         # Accommodation
+  "Darowizna": "Darowizna",     # Donation
+  "Meble": "Meble",             # Furniture
+  "Rozrywka": "Rozrywka",       # Entertainment
+  "Zdrowie": "Health",          # Health
+  "Praca": "Praca",             # Work
+  "Sport": "Sport",             # Sport
+  "Inne": "Inne",               # Other
+  "Edukacja": "Edukacja",       # Education
+  "Elektronika": "Elektronika", # Electronics
+  "Bankomat": "Bankomat",       # ATM
+  "Allegro": "Allegro",         # Allegro
+  "Media": "Media"              # Utilities
 }
 
 currency_map = {
@@ -65,3 +69,4 @@ def normalize_selector_columns(df: pd.DataFrame):
   # keep the 'currency' column as it is now because those are standard codes
   # df["currency"] = df["currency"].map(currency_map)
   df["payment_method"] = df["payment_method"].map(payment_method_map)
+  
