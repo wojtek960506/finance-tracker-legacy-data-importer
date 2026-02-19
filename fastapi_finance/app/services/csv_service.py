@@ -17,7 +17,8 @@ def normalize_csv_row(row: dict) -> dict:
   return normalized_row
 
 async def prepare_transactions_from_csv(
-    file: UploadFile
+    file: UploadFile,
+    id: str,
   ) -> tuple[list[TransactionCreate], list[dict]]:
   if not file.filename.endswith(".csv"):
     raise AppError(status.HTTP_400_BAD_REQUEST, "Only CSV files are supported.")
@@ -33,8 +34,7 @@ async def prepare_transactions_from_csv(
     try:
       transaction = TransactionCreate(
         **normalize_csv_row(row),
-        # id of w@z.pl user - TODO pass it as argument
-        ownerId=ObjectId("692192583e96407ebe1ac1ca")
+        ownerId=ObjectId(id)
       )
       valid_docs.append(transaction.model_dump(by_alias=True))
     except ValidationError as e:

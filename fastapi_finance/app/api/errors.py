@@ -45,9 +45,8 @@ async def validation_error_handler(_: Request, exc: RequestValidationError):
 async def http_error_handler(_: Request, exc: StarletteHTTPException):
   return JSONResponse(
     status_code=exc.status_code,
-    content=ErrorResponse(message=exc.detail or "HTTP Error", details=exc.detail).model_dump()
+    content=ErrorResponse(
+      message=exc.detail if isinstance(exc.detail, str) else "HTTP Error",
+      details=exc.detail
+    ).model_dump()
   )
-
-
-
-

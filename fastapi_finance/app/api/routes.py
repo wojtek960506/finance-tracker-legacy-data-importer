@@ -1,25 +1,28 @@
-from fastapi import APIRouter, status, UploadFile, File, Depends
+from bson import ObjectId
+from app.db.database import Database
+from app.dependencies.db_dep import get_db
+from app.decorators import show_execution_time
+from app.api.responses import Count, CreateManyTransactions
+from app.services.category_service import create_categories_map
+from app.services.csv_service import prepare_transactions_from_csv
+from fastapi import APIRouter, status, UploadFile, File, Depends, HTTPException
 from app.schema.transaction import (
   TransactionInDB,
   TransactionCreate,
   TransactionFullUpdate,
-  TransactionPartialUpdate
+  TransactionPartialUpdate,
 )
-from app.decorators import show_execution_time
 from app.services.transaction_service import (
-  get_all_transactions,
-  get_all_transactions_count,
   get_transaction,
   create_transaction,
   update_transaction,
   delete_transaction,
+  get_all_transactions,
   delete_all_transactions,
   create_many_transactions,
+  serialize_object_id_if_any,
+  get_all_transactions_count,
 )
-from app.services.csv_service import prepare_transactions_from_csv
-from app.db.database import Database
-from app.dependencies.db_dep import get_db
-from app.api.responses import Count, CreateManyTransactions
 
 
 router = APIRouter()
@@ -48,7 +51,10 @@ async def route_get_transaction(id: str, db: Database = Depends(get_db)):
 
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
 @show_execution_time
-async def route_create_transaction(transaction: TransactionCreate, db: Database = Depends(get_db)):
+async def route_create_transaction(
+  transaction: TransactionCreate,
+  db: Database = Depends(get_db)
+):
   """Create single transaction"""
   return await create_transaction(db, transaction)
 
@@ -94,11 +100,38 @@ async def route_delete_all_transactions(db: Database = Depends(get_db)):
   return { "count": deleted_count }
 
 
-@router.post("/import-csv", response_model=CreateManyTransactions)
+@router.post("/{id}/import-csv", response_model=CreateManyTransactions)
 @show_execution_time
 async def route_import_transactions_csv(
-  db: Database = Depends(get_db), file: UploadFile = File(...)
+  id: str,
+  db: Database = Depends(get_db),
+  file: UploadFile = File(...),
 ):
   """Create transactions based on the data in CSV"""
-  valid_docs, errors = await prepare_transactions_from_csv(file)
-  return await create_many_transactions(db, valid_docs, errors)
+
+  if (await db.users.find_one({"_id": ObjectId(id)})) is None:
+    raise HTTPException(status_code=404, detail="User not found")
+
+  # do not allow importing transactions' data from CSV for a user who already has transactions
+  if (await db.transactions.count_documents({ "ownerId": ObjectId(id)})) > 0:
+    raise HTTPException(
+      status_code=409,
+      detail="Cannot import transactions for a user who already has some transactions",
+    )
+
+  valid_docs, errors = await prepare_transactions_from_csv(file, id)
+
+  categories_map = await create_categories_map(db, id, valid_docs)
+
+  if (errors):
+    errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
+    raise HTTPException(
+      status_code=400,
+      detail={
+        "valid_transactions_count": len(valid_docs),
+        "invalid_transactions_count": len(errors),
+        "first_10_errors": errors_to_show,
+      }
+    )
+  
+  return await create_many_transactions(db, valid_docs, errors, categories_map)

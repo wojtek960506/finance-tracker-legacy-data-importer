@@ -115,9 +115,13 @@ def serialize_object_id_if_any(obj):
 async def create_many_transactions(
     db: Database,
     transactions: list[TransactionCreate],
-    errors: list[dict]
+    errors: list[dict],
+    categories_map: dict[str, ObjectId],
   ) -> CreateManyTransactions:
 
+
+  # TODO - think about other schema of return value
+  #        as errors are handled before calling this function
   if len(transactions) == 0:
     return {
       "imported": 0,
@@ -125,8 +129,11 @@ async def create_many_transactions(
       "errors": [],
       "updateErrors": [],
     }
+  
+  for transaction in transactions:
+    transaction["categoryId"] = categories_map[transaction.pop("category")]
 
-  result = await db.transactions.insert_many(transactions)  
+  result = await db.transactions.insert_many(transactions)
 
   # ##################################################################
   # UPDATE TRANSACTIONS WITH REFERENCES AS `_id` VALUES FROM DB
