@@ -1,7 +1,9 @@
+from bson import ObjectId
 from app.db.database import Database
 from app.dependencies.db_dep import get_db
 from app.decorators import show_execution_time
 from app.api.responses import Count, CreateManyTransactions
+from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv
 from fastapi import APIRouter, status, UploadFile, File, Depends, HTTPException
 from app.schema.transaction import (
@@ -106,9 +108,22 @@ async def route_import_transactions_csv(
   file: UploadFile = File(...),
 ):
   """Create transactions based on the data in CSV"""
+
+  if (await db.users.find_one({"_id": ObjectId(id)})) is None:
+    raise HTTPException(status_code=404, detail="User not found")
+
+  # do not allow importing transactions' data from CSV for a user who already has transactions
+  if (await db.transactions.count_documents({ "ownerId": ObjectId(id)})) > 0:
+    raise HTTPException(
+      status_code=409,
+      detail="Cannot import transactions for a user who already has some transactions",
+    )
+
   valid_docs, errors = await prepare_transactions_from_csv(file, id)
 
-  if (errors or 1 > 0):
+  categories_map = await create_categories_map(db, id, valid_docs)
+
+  if (errors):
     errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
     raise HTTPException(
       status_code=400,
@@ -119,4 +134,4 @@ async def route_import_transactions_csv(
       }
     )
   
-  return await create_many_transactions(db, valid_docs, errors)
+  return await create_many_transactions(db, valid_docs, errors, categories_map)

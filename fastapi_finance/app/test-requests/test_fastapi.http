@@ -77,7 +77,7 @@ DELETE {{baseUrl}}/transactions
 
 
 ### Import transactions CSV
-POST http://localhost:8000/api/transactions/692192583e96407ebe1ac1ca/import-csv
+POST http://localhost:8000/api/transactions/699719579344a89905cd5b60/import-csv
 Content-Type: multipart/form-data; boundary=boundary123
 
 --boundary123

@@ -31,7 +31,7 @@ category_map = {
   "Darowizna": "Darowizna",     # Donation
   "Meble": "Meble",             # Furniture
   "Rozrywka": "Rozrywka",       # Entertainment
-  "Zdrowie": "Health",          # Health
+  "Zdrowie": "Zdrowie",         # Health
   "Praca": "Praca",             # Work
   "Sport": "Sport",             # Sport
   "Inne": "Inne",               # Other
@@ -69,4 +69,3 @@ def normalize_selector_columns(df: pd.DataFrame):
   # keep the 'currency' column as it is now because those are standard codes
   # df["currency"] = df["currency"].map(currency_map)
   df["payment_method"] = df["payment_method"].map(payment_method_map)
-  
