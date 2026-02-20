@@ -15,7 +15,7 @@ from app.middleware.performance import add_execution_time
 @asynccontextmanager
 async def lifespan(app: MongoDBFastAPI):
   # --- Startup ---
-  await init_db(app)
+  init_db(app)
 
   yield # app runs here
 
