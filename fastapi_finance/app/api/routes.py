@@ -20,19 +20,11 @@ from app.services.transaction_service import (
   delete_all_transactions,
   create_many_transactions,
   serialize_object_id_if_any,
-  get_all_transactions_count,
 )
 
 
 router = APIRouter()
 
-
-@router.get("/count", response_model=Count)
-@show_execution_time
-async def route_get_transactions_count(db: Database = Depends(get_db)):
-  """Return number of all transactions stored in MongoDB."""
-  count = await get_all_transactions_count(db)
-  return { "count": count }
 
 
 @router.get("/{id}", response_model=TransactionInDB)
