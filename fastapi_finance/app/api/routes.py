@@ -26,14 +26,6 @@ from app.services.transaction_service import (
 router = APIRouter()
 
 
-
-@router.get("/{id}", response_model=TransactionInDB)
-@show_execution_time
-async def route_get_transaction(id: str, db: Database = Depends(get_db)):
-  """Return single transaction by id."""
-  return await get_transaction(db, id)
-
-
 @router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
 @show_execution_time
 async def route_create_transaction(
