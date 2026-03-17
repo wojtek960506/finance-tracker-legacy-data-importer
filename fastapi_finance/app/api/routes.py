@@ -8,7 +8,7 @@ from app.services.csv_service import prepare_transactions_from_csv
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.services.transaction_service import (
   delete_transactions,
-  create_many_transactions,
+  create_transactions,
   serialize_object,
 )
 
@@ -55,4 +55,4 @@ async def route_import_transactions_csv(
       }
     )
   
-  return await create_many_transactions(db, valid_docs, errors, categories_map)
+  return await create_transactions(db, valid_docs, errors, categories_map)

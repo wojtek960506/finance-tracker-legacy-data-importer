@@ -5,7 +5,7 @@ from app.api.responses import CreateManyTransactions
 from pymongo import UpdateOne
 from .serialize_object import serialize_object
 
-async def create_many_transactions(
+async def create_transactions(
     db: Database,
     transactions: list[TransactionCreate],
     errors: list[dict],

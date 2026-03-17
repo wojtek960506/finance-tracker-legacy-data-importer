@@ -6,7 +6,7 @@ from app.db.client import database_session
 from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv_path
 from app.services.transaction_service import (
-  create_many_transactions,
+  create_transactions,
   serialize_object,
 )
 
@@ -32,7 +32,7 @@ async def run_import(owner_id: str, csv_path: str) -> int:
       }, indent=2, default=str))
       return 1
 
-    result = await create_many_transactions(db, valid_docs, errors, categories_map)
+    result = await create_transactions(db, valid_docs, errors, categories_map)
     print(json.dumps(result, indent=2, default=str))
     return 0
 
