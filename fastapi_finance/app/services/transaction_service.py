@@ -18,11 +18,6 @@ def normalize_id(transaction):
   return transaction
 
 
-async def get_all_transactions(db: Database) -> list[TransactionInDB]:
-  transactions = await db.transactions.find().to_list(length=None)
-  return [TransactionInDB.model_validate(normalize_id(t)) for t in transactions]
-
-
 async def get_all_transactions_count(db: Database) -> int:
   return await db.transactions.count_documents({})
 

@@ -17,7 +17,6 @@ from app.services.transaction_service import (
   create_transaction,
   update_transaction,
   delete_transaction,
-  get_all_transactions,
   delete_all_transactions,
   create_many_transactions,
   serialize_object_id_if_any,
@@ -26,12 +25,6 @@ from app.services.transaction_service import (
 
 
 router = APIRouter()
-
-@router.get("/", response_model=list[TransactionInDB])
-@show_execution_time
-async def route_get_transactions(db: Database = Depends(get_db)):
-  """Return all transactions from MongoDB."""
-  return await get_all_transactions(db)
 
 
 @router.get("/count", response_model=Count)
