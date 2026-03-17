@@ -86,15 +86,6 @@ class TransactionCreate(TransactionBase, PartialModelMixin):
     return self
   pass
 
-class TransactionFullUpdate(TransactionCreate):
-  """Schema for full update of transaction."""
-  pass
-
-TransactionPartialUpdateBase = TransactionCreate.model_as_partial()
-
-class TransactionPartialUpdate(TransactionPartialUpdateBase):
-  """Schema for partial update of transaction."""
-  pass
 
 class TransactionInDB(TransactionBase):
   """Schema for data retrieved from MondoDB"""

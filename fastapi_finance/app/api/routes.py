@@ -6,49 +6,14 @@ from app.api.responses import Count, CreateManyTransactions
 from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
-from app.schema.transaction import (
-  TransactionInDB,
-  TransactionFullUpdate,
-  TransactionPartialUpdate,
-)
 from app.services.transaction_service import (
-  get_transaction,
-  update_transaction,
   delete_transaction,
   delete_all_transactions,
   create_many_transactions,
   serialize_object_id_if_any,
 )
 
-
 router = APIRouter()
-
-
-# PUT and PATCH below calls the same method but the validation
-# is done based on the type of `transaction` type in definition
-@router.put("/{id}", response_model=TransactionInDB)
-@show_execution_time
-async def route_full_transaction_update(
-  id: str,
-  transaction: TransactionFullUpdate,
-  db: Database = Depends(get_db)
-):
-  """Full update transaction"""
-  await update_transaction(db, id, transaction)
-  return await get_transaction(db, id)
-
-
-@router.patch("/{id}", response_model=TransactionInDB)
-@show_execution_time
-async def route_partial_transaction_update(
-  id: str,
-  transaction: TransactionPartialUpdate,
-  db: Database = Depends(get_db)
-):
-  """Partial update of transaction"""
-  await update_transaction(db, id, transaction)
-  return await get_transaction(db, id)
-
 
 @router.delete("/{id}")
 @show_execution_time
