@@ -11,6 +11,8 @@ from app.services.transaction_service import (
   create_transactions,
   serialize_object,
 )
+from app.services.user_service import find_user
+from app.services.transaction_service import count_transactions
 
 router = APIRouter()
 
@@ -30,11 +32,11 @@ async def route_import_transactions_csv(
 ):
   """Create transactions based on the data in CSV"""
 
-  if (await db.users.find_one({"_id": ObjectId(id)})) is None:
+  if (await find_user(db, id)) is None:
     raise HTTPException(status_code=404, detail="User not found")
 
   # do not allow importing transactions' data from CSV for a user who already has transactions
-  if (await db.transactions.count_documents({ "ownerId": ObjectId(id)})) > 0:
+  if (await count_transactions(db, id)) > 0:
     raise HTTPException(
       status_code=409,
       detail="Cannot import transactions for a user who already has some transactions",

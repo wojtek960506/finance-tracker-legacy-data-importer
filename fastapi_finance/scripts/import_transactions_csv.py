@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import json
-from bson import ObjectId
 from app.db.client import database_session
 from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv_path
@@ -9,14 +8,16 @@ from app.services.transaction_service import (
   create_transactions,
   serialize_object,
 )
+from app.services.user_service import find_user
+from app.services.transaction_service import count_transactions
 
 async def run_import(owner_id: str, csv_path: str) -> int:
   async with database_session() as db:
-    if (await db.users.find_one({"_id": ObjectId(owner_id)})) is None:
+    if (await find_user(db, id)) is None:
       print("User not found")
       return 1
 
-    if (await db.transactions.count_documents({"ownerId": ObjectId(owner_id)})) > 0:
+    if (await count_transactions(db, owner_id)) > 0:
       print("Cannot import transactions for a user who already has some transactions")
       return 1
 
