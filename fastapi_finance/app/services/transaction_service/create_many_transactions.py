@@ -3,42 +3,7 @@ from bson import ObjectId
 from app.db.database import Database
 from app.api.responses import CreateManyTransactions
 from pymongo import UpdateOne
-
-
-# delete all transactions of a given user
-async def delete_all_transactions(db: Database, ownerId: str) -> int:
-  result = await db.transactions.delete_many({ "ownerId": ownerId })
-  return result.deleted_count
-
-
-def serialize_object_id_if_any(obj):
-  # owner id has to be serialized to string because when it is passed as bson.ObjectId,
-  # then such error is thrown: "pydantic_core._pydantic_core.PydanticSerializationError:
-  # Unable to serialize unknown type: <class 'bson.objectid.ObjectId'>""
-
-  error = obj.get('error')
-  if error is None:
-    print('isNone')
-    return obj
-
-  new_error_arr = []
-
-  for e in error:
-    input_dict = e.get("input")
-    if input_dict is None:
-      new_error_arr.append(e)
-    else:
-      input_dict = dict(input_dict)
-      ownerId = input_dict.get('ownerId')
-      if ownerId is None:
-        new_error_arr.append(e)
-      else:
-        input_dict['ownerId'] = str(input_dict['ownerId'])
-        e['input'] = input_dict
-        new_error_arr.append(e)
-
-  obj['error'] = new_error_arr
-  return obj
+from .serialize_object import serialize_object
 
 async def create_many_transactions(
     db: Database,
@@ -46,7 +11,6 @@ async def create_many_transactions(
     errors: list[dict],
     categories_map: dict[str, ObjectId],
   ) -> CreateManyTransactions:
-
 
   # TODO - think about other schema of return value
   #        as errors are handled before calling this function
@@ -116,7 +80,7 @@ async def create_many_transactions(
   )
   # ------------------------------------------------------------------
 
-  errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
+  errors_to_show = list(map(serialize_object, errors[:10]))
 
   # when we have some errors and there is an ObjectId there as bson, then the Internal
   # Server error is thrown, because serializer is not able to serialize it
@@ -126,4 +90,3 @@ async def create_many_transactions(
     "errors": errors_to_show,
     "updateErrors": update_errors,
   }
-

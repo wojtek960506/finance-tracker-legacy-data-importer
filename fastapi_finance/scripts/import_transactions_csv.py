@@ -7,9 +7,8 @@ from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv_path
 from app.services.transaction_service import (
   create_many_transactions,
-  serialize_object_id_if_any,
+  serialize_object,
 )
-
 
 async def run_import(owner_id: str, csv_path: str) -> int:
   async with database_session() as db:
@@ -25,7 +24,7 @@ async def run_import(owner_id: str, csv_path: str) -> int:
     categories_map = await create_categories_map(db, owner_id, valid_docs)
 
     if errors:
-      errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
+      errors_to_show = list(map(serialize_object, errors[:10]))
       print(json.dumps({
         "valid_transactions_count": len(valid_docs),
         "invalid_transactions_count": len(errors),

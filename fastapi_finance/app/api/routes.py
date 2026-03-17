@@ -7,9 +7,9 @@ from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.services.transaction_service import (
-  delete_all_transactions,
+  delete_transactions,
   create_many_transactions,
-  serialize_object_id_if_any,
+  serialize_object,
 )
 
 router = APIRouter()
@@ -18,7 +18,7 @@ router = APIRouter()
 @show_execution_time
 async def route_delete_all_transactions(ownerId: str, db: Database = Depends(get_db)):
   """Delete all transactions"""
-  deleted_count = await delete_all_transactions(db, ownerId)
+  deleted_count = await delete_transactions(db, ownerId)
   return { "count": deleted_count }
 
 @router.post("/{id}/import-csv", response_model=CreateManyTransactions)
@@ -45,7 +45,7 @@ async def route_import_transactions_csv(
   categories_map = await create_categories_map(db, id, valid_docs)
 
   if (errors):
-    errors_to_show = list(map(serialize_object_id_if_any, errors[:10]))
+    errors_to_show = list(map(serialize_object, errors[:10]))
     raise HTTPException(
       status_code=400,
       detail={
