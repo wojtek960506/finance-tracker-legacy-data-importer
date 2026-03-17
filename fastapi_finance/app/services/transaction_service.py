@@ -29,13 +29,6 @@ async def get_transaction(db: Database, id: str) -> TransactionInDB:
   return TransactionInDB.model_validate(normalize_id(transaction))
 
 
-async def create_transaction(db: Database, transaction: TransactionCreate):
-  result = await db.transactions.insert_one(transaction.model_dump(by_alias=True))
-  # get newly created object
-  new_t = await db.transactions.find_one({ "_id": result.inserted_id })
-  return TransactionInDB.model_validate(normalize_id(new_t))
-
-
 async def update_transaction(
   db: Database,
   id: str,

@@ -5,16 +5,14 @@ from app.decorators import show_execution_time
 from app.api.responses import Count, CreateManyTransactions
 from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv
-from fastapi import APIRouter, status, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 from app.schema.transaction import (
   TransactionInDB,
-  TransactionCreate,
   TransactionFullUpdate,
   TransactionPartialUpdate,
 )
 from app.services.transaction_service import (
   get_transaction,
-  create_transaction,
   update_transaction,
   delete_transaction,
   delete_all_transactions,
@@ -24,16 +22,6 @@ from app.services.transaction_service import (
 
 
 router = APIRouter()
-
-
-@router.post("/", response_model=TransactionInDB, status_code=status.HTTP_201_CREATED)
-@show_execution_time
-async def route_create_transaction(
-  transaction: TransactionCreate,
-  db: Database = Depends(get_db)
-):
-  """Create single transaction"""
-  return await create_transaction(db, transaction)
 
 
 # PUT and PATCH below calls the same method but the validation
