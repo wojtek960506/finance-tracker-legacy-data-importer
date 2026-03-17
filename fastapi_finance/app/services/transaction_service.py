@@ -1,35 +1,13 @@
-from app.schema.transaction import (
-  TransactionInDB,
-  TransactionCreate,
-)
+from app.schema.transaction import TransactionCreate
 from bson import ObjectId
-from fastapi import status
-from app.api.errors import AppError
 from app.db.database import Database
 from app.api.responses import CreateManyTransactions
 from pymongo import UpdateOne
 
 
-def normalize_id(transaction):
-  transaction["_id"] = str(transaction["_id"])
-  return transaction
-
-
-async def delete_transaction(db: Database, id: str) -> TransactionInDB:
-  """Delete transaction. In case of no transaction with given `id`, error is thrown."""
-  deleted = await db.transactions.find_one_and_delete({ "_id": ObjectId(id) })
-
-  if not deleted:
-    message = f"Transaction with id: '{id}' not found, so not deleted" 
-    raise AppError(status.HTTP_404_NOT_FOUND, message)
-
-  deleted["_id"] = str(deleted["_id"])
-  return TransactionInDB.model_validate(deleted)
-
-
-# for testing purposes - later some authorization only for admin will be added
-async def delete_all_transactions(db: Database) -> int:
-  result = await db.transactions.delete_many({})
+# delete all transactions of a given user
+async def delete_all_transactions(db: Database, ownerId: str) -> int:
+  result = await db.transactions.delete_many({ "ownerId": ownerId })
   return result.deleted_count
 
 

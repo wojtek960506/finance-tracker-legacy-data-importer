@@ -1,18 +1,14 @@
 @baseUrl = http://localhost:8000/api
 @newTransactionId = i
 
+# ----------------------------------------------------------------------------------------
 
-### Delete a transaction
+### Delete all transactions of a given user
+DELETE {{baseUrl}}/transactions/user/699719579344a89905cd5b60
 
-DELETE {{baseUrl}}/transactions/{{newTransactionId}}
+# ----------------------------------------------------------------------------------------
 
-
-### Delete all transactions
-
-DELETE {{baseUrl}}/transactions
-
-
-### Import transactions CSV
+### Import transactions from CSV for a given user
 POST http://localhost:8000/api/transactions/699719579344a89905cd5b60/import-csv
 Content-Type: multipart/form-data; boundary=boundary123
 
@@ -22,6 +18,8 @@ Content-Type: text/csv
 
 < ../../../parser/data/all/finance_all_transfer_refs.csv
 --boundary123--
+
+# ----------------------------------------------------------------------------------------
 
 # data with references for `myAccount` transactions
 # finance_all_transfer_refs.csv
