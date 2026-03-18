@@ -1,7 +1,7 @@
 import csv
 from bson import ObjectId
 from io import StringIO
-from fastapi import UploadFile, status
+from fastapi import status
 from app.api.errors import AppError
 from app.schema.transaction import TransactionCreate
 from pydantic_core import ValidationError
@@ -16,11 +16,16 @@ def normalize_csv_row(row: dict) -> dict:
       normalized_row[key] = value
   return normalized_row
 
-
-def prepare_transactions_from_csv_text(
-  csv_text: str,
+def prepare_transactions_from_csv(
+  csv_path: str,
   owner_id: str,
-) -> tuple[list[TransactionCreate], list[dict]]:
+) -> tuple[list[TransactionCreate], list[dict]]:  
+  if not csv_path.endswith(".csv"):
+    raise AppError(status.HTTP_400_BAD_REQUEST, "Only CSV files are supported.")
+
+  with open(csv_path, encoding="utf-8") as csv_file:
+    csv_text = csv_file.read()
+
   csv_reader = csv.DictReader(StringIO(csv_text))
 
   valid_docs = []
@@ -40,16 +45,3 @@ def prepare_transactions_from_csv_text(
     raise AppError(status.HTTP_400_BAD_REQUEST, "No valid transactions found in CSV.")
 
   return valid_docs, errors
-
-
-def prepare_transactions_from_csv_path(
-  csv_path: str,
-  owner_id: str,
-) -> tuple[list[TransactionCreate], list[dict]]:
-  if not csv_path.endswith(".csv"):
-    raise AppError(status.HTTP_400_BAD_REQUEST, "Only CSV files are supported.")
-
-  with open(csv_path, encoding="utf-8") as csv_file:
-    csv_text = csv_file.read()
-
-  return prepare_transactions_from_csv_text(csv_text, owner_id)

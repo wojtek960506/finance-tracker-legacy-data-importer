@@ -3,7 +3,7 @@ import asyncio
 import json
 from app.db.client import database_session
 from app.services.category_service import create_categories_map
-from app.services.csv_service import prepare_transactions_from_csv_path
+from app.services.csv_service import prepare_transactions_from_csv
 from app.services.transaction_service import (
   create_transactions,
   serialize_object,
@@ -11,7 +11,7 @@ from app.services.transaction_service import (
 from app.services.user_service import find_user
 from app.services.transaction_service import count_transactions
 
-async def run_transactions_import(owner_id: str, csv_path: str) -> int:
+async def run_transactions_import(owner_id: str, csv_file_path: str) -> int:
   async with database_session() as db:
     if (await find_user(db, owner_id)) is None:
       print("User not found")
@@ -21,7 +21,7 @@ async def run_transactions_import(owner_id: str, csv_path: str) -> int:
       print("Cannot import transactions for a user who already has some transactions")
       return 1
 
-    valid_docs, errors = prepare_transactions_from_csv_path(csv_path, owner_id)
+    valid_docs, errors = prepare_transactions_from_csv(csv_file_path, owner_id)
     categories_map = await create_categories_map(db, owner_id, valid_docs)
 
     if errors:
