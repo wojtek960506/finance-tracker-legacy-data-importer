@@ -11,9 +11,9 @@ from app.services.transaction_service import (
 from app.services.user_service import find_user
 from app.services.transaction_service import count_transactions
 
-async def run_import(owner_id: str, csv_path: str) -> int:
+async def run_transactions_import(owner_id: str, csv_path: str) -> int:
   async with database_session() as db:
-    if (await find_user(db, id)) is None:
+    if (await find_user(db, owner_id)) is None:
       print("User not found")
       return 1
 
@@ -42,11 +42,11 @@ def main():
   parser = argparse.ArgumentParser(
     description="Import transactions from CSV without running the API server.",
   )
-  parser.add_argument("owner_id", help="Mongo ObjectId of the user")
+  parser.add_argument("owner_id", help="Mongo ObjectId of the user passed as a string")
   parser.add_argument("csv_path", help="Path to CSV file")
   args = parser.parse_args()
 
-  exit_code = asyncio.run(run_import(args.owner_id, args.csv_path))
+  exit_code = asyncio.run(run_transactions_import(args.owner_id, args.csv_path))
   raise SystemExit(exit_code)
 
 

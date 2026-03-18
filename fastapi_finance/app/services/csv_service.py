@@ -19,7 +19,7 @@ def normalize_csv_row(row: dict) -> dict:
 
 def prepare_transactions_from_csv_text(
   csv_text: str,
-  id: str,
+  owner_id: str,
 ) -> tuple[list[TransactionCreate], list[dict]]:
   csv_reader = csv.DictReader(StringIO(csv_text))
 
@@ -30,7 +30,7 @@ def prepare_transactions_from_csv_text(
     try:
       transaction = TransactionCreate(
         **normalize_csv_row(row),
-        ownerId=ObjectId(id)
+        ownerId=ObjectId(owner_id)
       )
       valid_docs.append(transaction.model_dump(by_alias=True))
     except ValidationError as e:
@@ -44,7 +44,7 @@ def prepare_transactions_from_csv_text(
 
 def prepare_transactions_from_csv_path(
   csv_path: str,
-  id: str,
+  owner_id: str,
 ) -> tuple[list[TransactionCreate], list[dict]]:
   if not csv_path.endswith(".csv"):
     raise AppError(status.HTTP_400_BAD_REQUEST, "Only CSV files are supported.")
@@ -52,16 +52,16 @@ def prepare_transactions_from_csv_path(
   with open(csv_path, encoding="utf-8") as csv_file:
     csv_text = csv_file.read()
 
-  return prepare_transactions_from_csv_text(csv_text, id)
+  return prepare_transactions_from_csv_text(csv_text, owner_id)
 
 
 async def prepare_transactions_from_csv(
     file: UploadFile,
-    id: str,
+    owner_id: str,
   ) -> tuple[list[TransactionCreate], list[dict]]:
   if not file.filename.endswith(".csv"):
     raise AppError(status.HTTP_400_BAD_REQUEST, "Only CSV files are supported.")
   
   content = await file.read()
   decoded = content.decode("utf-8")
-  return prepare_transactions_from_csv_text(decoded, id)
+  return prepare_transactions_from_csv_text(decoded, owner_id)

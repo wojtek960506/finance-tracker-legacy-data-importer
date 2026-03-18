@@ -13,7 +13,7 @@ async def get_category_by_name(db: Database, name: str, owner_id: str):
   return await db.categories.find_one({
     "nameNormalized": normalize_whitespace(name).lower(),
     "$or": [
-      { "type": "user", "ownerId": owner_id },
+      { "type": "user", "ownerId": ObjectId(owner_id) },
       { "type": "system", "ownerId": None },
     ]
   })

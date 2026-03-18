@@ -4,12 +4,12 @@
 # ----------------------------------------------------------------------------------------
 
 ### Delete all transactions of a given user
-DELETE {{baseUrl}}/transactions/user/699719579344a89905cd5b60
+DELETE {{baseUrl}}/transactions/users/699719579344a89905cd5b60
 
 # ----------------------------------------------------------------------------------------
 
 ### Import transactions from CSV for a given user
-POST http://localhost:8000/api/transactions/699719579344a89905cd5b60/import-csv
+POST http://localhost:8000/api/transactions/users/699719579344a89905cd5b60/import-csv
 Content-Type: multipart/form-data; boundary=boundary123
 
 --boundary123
