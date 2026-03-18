@@ -53,15 +53,3 @@ def prepare_transactions_from_csv_path(
     csv_text = csv_file.read()
 
   return prepare_transactions_from_csv_text(csv_text, owner_id)
-
-
-async def prepare_transactions_from_csv(
-    file: UploadFile,
-    owner_id: str,
-  ) -> tuple[list[TransactionCreate], list[dict]]:
-  if not file.filename.endswith(".csv"):
-    raise AppError(status.HTTP_400_BAD_REQUEST, "Only CSV files are supported.")
-  
-  content = await file.read()
-  decoded = content.decode("utf-8")
-  return prepare_transactions_from_csv_text(decoded, owner_id)
