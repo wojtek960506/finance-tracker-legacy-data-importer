@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import json
 from app.db.client import database_session
-from app.services.category_service import create_categories_map
 from app.services.csv_service import prepare_transactions_from_csv
 from app.services.transaction_service import (
   create_transactions,
@@ -10,6 +9,10 @@ from app.services.transaction_service import (
 )
 from app.services.user_service import find_user
 from app.services.transaction_service import count_transactions
+from app.services.resource_service.create_resource_map import create_resource_map
+from app.services.resource_service.resource_enum import ResourceEnum
+  
+
 
 async def run_transactions_import(owner_id: str, csv_file_path: str) -> int:
   async with database_session() as db:
@@ -22,7 +25,15 @@ async def run_transactions_import(owner_id: str, csv_file_path: str) -> int:
       return 1
 
     valid_docs, errors = prepare_transactions_from_csv(csv_file_path, owner_id)
-    categories_map = await create_categories_map(db, owner_id, valid_docs)
+    categories_map = await create_resource_map(
+      ResourceEnum.CATEGORY, db, owner_id, valid_docs
+    )
+    accounts_map = await create_resource_map(
+      ResourceEnum.ACCOUNT, db, owner_id, valid_docs
+    )
+    paymentMethods_map = await create_resource_map(
+      ResourceEnum.PAYMENT_METHOD, db, owner_id, valid_docs
+    )
 
     if errors:
       errors_to_show = list(map(serialize_object, errors[:10]))
@@ -33,7 +44,14 @@ async def run_transactions_import(owner_id: str, csv_file_path: str) -> int:
       }, indent=2, default=str))
       return 1
 
-    result = await create_transactions(db, valid_docs, errors, categories_map)
+    result = await create_transactions(
+      db,
+      valid_docs,
+      errors,
+      categories_map,
+      accounts_map,
+      paymentMethods_map,
+    )
     print(json.dumps(result, indent=2, default=str))
     return 0
 

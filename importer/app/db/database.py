@@ -1,4 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorCollection, AsyncIOMotorDatabase
+from app.services.resource_service.resource_enum import ResourceEnum
+
 
 class Database:
   def __init__(self, db: AsyncIOMotorDatabase):
@@ -6,4 +8,6 @@ class Database:
     self.users: AsyncIOMotorCollection = db.users
     self.transactions: AsyncIOMotorCollection = db.transactions
     self.counters: AsyncIOMotorCollection = db.counters
-    self.categories: AsyncIOMotorCollection = db.categories
+
+  def collection(self, resource: ResourceEnum) -> AsyncIOMotorCollection:
+    return getattr(self._db, resource.collection_name)

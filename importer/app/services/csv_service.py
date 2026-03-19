@@ -37,7 +37,7 @@ def prepare_transactions_from_csv(
         **normalize_csv_row(row),
         ownerId=ObjectId(owner_id)
       )
-      valid_docs.append(transaction.model_dump(by_alias=True))
+      valid_docs.append(transaction)
     except ValidationError as e:
       errors.append({ "row": i, "error": e.errors() })
 
