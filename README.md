@@ -7,7 +7,8 @@ The repository has two parts:
 
 - `parser/` prepares CSV exports from old spreadsheet data.
 - `importer/` provides admin and migration CLI tools for validating CSV files, importing
-  transactions, listing users, and cleaning up users or resources in MongoDB.
+  transactions, listing users, checking suspicious resources, and cleaning up users or
+  resources in MongoDB.
 
 ## Parser
 
@@ -154,6 +155,21 @@ before choosing an `owner_id` for import or cleanup operations.
 
 Use `--json` to print the same compact data as JSON. Use `--include-raw` to include all user
 document fields as JSON.
+
+This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKEN`.
+
+### List Ownerless Resources
+
+Run from the `importer/` directory:
+
+```bash
+python -m scripts.list_ownerless_resources
+```
+
+This lists suspicious resource documents where `type` is `user` but `ownerId` is missing or
+null. System resources are intentionally excluded because they use `ownerId: null`.
+
+Use `--json` to print the same compact data as JSON.
 
 This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKEN`.
 

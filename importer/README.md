@@ -8,6 +8,7 @@ Scripts:
 - `scripts.delete_all_unused_resources`: deletes all user-owned named resources for users with no transactions.
 - `scripts.delete_user`: deletes a user only when they have no transactions and no user-owned resources.
 - `scripts.delete_resources`: deletes user-owned named resources not used by any transaction.
+- `scripts.list_ownerless_resources`: lists suspicious user-owned resources with missing `ownerId`.
 - `scripts.list_users`: lists users in a table with transaction and named resource counts.
 - `scripts.delete_transactions`: deletes all transactions for a user.
 - `scripts.import_transactions_csv`: imports transactions from a CSV file for a user.
@@ -22,6 +23,17 @@ python -m scripts.list_users
 python -m scripts.list_users --json
 python -m scripts.list_users --include-raw
 ```
+
+```bash
+python -m scripts.list_ownerless_resources
+```
+
+```bash
+python -m scripts.list_ownerless_resources --json
+```
+
+This script lists suspicious resource documents where `type` is `user` but `ownerId` is missing
+or null. System resources are not included.
 
 ```bash
 python -m scripts.delete_all_empty_users
