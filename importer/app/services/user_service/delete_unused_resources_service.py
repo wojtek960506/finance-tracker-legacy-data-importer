@@ -4,6 +4,7 @@ from bson import ObjectId
 
 from app.db.client import database_session
 from app.services.resource_service.resource_enum import ResourceEnum
+from app.utils import require_exact_confirmation
 
 from .find_user import find_user
 
@@ -21,7 +22,19 @@ async def delete_unused_resources_for_user(owner_id: str) -> dict:
     if user is None:
       return {
         "deleted": False,
-        "reason": "User not found",
+        "error": "User not found",
+        "ownerId": owner_id,
+      }
+
+    user_label = user.get("email") or owner_id
+    confirmed = require_exact_confirmation(
+      "DELETE RESOURCES",
+      f"delete unused named resources of user with email {user_label}",
+    )
+    if not confirmed:
+      return {
+        "deleted": False,
+        "error": "Deletion cancelled because confirmation text did not match",
         "ownerId": owner_id,
       }
 
@@ -57,7 +70,7 @@ async def delete_unused_resources_for_user(owner_id: str) -> dict:
     }
 
 
-async def run_delete_unused_resources(owner_id: str) -> int:
+async def run_delete_resources(owner_id: str) -> int:
   result = await delete_unused_resources_for_user(owner_id)
   print(json.dumps(result, indent=2, default=str))
   return 0 if result["deleted"] else 1

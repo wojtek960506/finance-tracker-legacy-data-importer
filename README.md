@@ -157,11 +157,12 @@ This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKE
 Run from the `importer/` directory:
 
 ```bash
-python -m scripts.delete_unused_resources <owner_id>
+python -m scripts.delete_resources <owner_id>
 ```
 
 This deletes user-owned `accounts`, `categories`, and `paymentMethods` that are not referenced by
 any transaction belonging to that user.
+It requires the admin token prompt and then the exact confirmation text `DELETE RESOURCES`.
 
 ### Import Transactions
 
@@ -196,6 +197,8 @@ This deletes all transactions for the given user.
 
 The delete script also requires the admin token prompt to match
 `LEGACY_IMPORTER_ADMIN_TOKEN`.
+It then requires typing the exact confirmation text `DELETE TRANSACTIONS`, shown together with the
+target user's email when available.
 
 ## CSV Format
 

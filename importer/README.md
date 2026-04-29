@@ -4,7 +4,7 @@ These are trusted local admin tools. All scripts require the hidden admin token 
 to match `LEGACY_IMPORTER_ADMIN_TOKEN` from `.env`.
 
 Scripts:
-- `scripts.delete_unused_resources`: deletes user-owned named resources not used by any transaction.
+- `scripts.delete_resources`: deletes user-owned named resources not used by any transaction.
 - `scripts.list_users`: lists users in a table with transaction and named resource counts.
 - `scripts.delete_transactions`: deletes all transactions for a user.
 - `scripts.import_transactions_csv`: imports transactions from a CSV file for a user.
@@ -21,12 +21,18 @@ python -m scripts.list_users --include-raw
 ```
 
 ```bash
-python -m scripts.delete_unused_resources <owner_id>
+python -m scripts.delete_resources <owner_id>
 ```
+
+This script requires both the admin token prompt and the exact confirmation text
+`DELETE RESOURCES`. Only unused user-owned resources are deleted.
 
 ```bash
 python -m scripts.delete_transactions <owner_id>
 ```
+
+This script requires both the admin token prompt and the exact confirmation text
+`DELETE TRANSACTIONS`, shown together with the target user's email when available.
 
 ```bash
 python -m scripts.import_transactions_csv <owner_id> <csv_file_path>
