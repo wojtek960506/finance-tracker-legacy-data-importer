@@ -1,7 +1,7 @@
 import argparse
 import asyncio
 
-from app.services.admin_guard import require_admin_auth
+from app.services.admin_guard import AdminAuthError, require_admin_auth
 from app.services.user_service import run_users_list
 
 
@@ -21,7 +21,12 @@ def main():
   )
   args = parser.parse_args()
 
-  require_admin_auth()
+  try:
+    require_admin_auth()
+  except AdminAuthError as err:
+    print(str(err))
+    raise SystemExit(1)
+
   exit_code = asyncio.run(run_users_list(args.include_raw, args.json))
   raise SystemExit(exit_code)
 

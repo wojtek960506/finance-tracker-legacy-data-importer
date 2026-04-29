@@ -4,6 +4,7 @@ from app.db.client import database_session
 from app.services.user_service import find_user
 from app.utils import require_exact_confirmation
 
+from .count_transactions import count_transactions
 from .delete_transactions import delete_transactions
 
 
@@ -18,17 +19,27 @@ async def delete_transactions_for_user(owner_id: str) -> dict:
       }
 
     user_label = user.get("email") or owner_id
+    transactions_count = await count_transactions(db, owner_id)
+    displayed_confirmation_text = "DELETE TRANSACTIONS"
+    confirmation_text = f"{displayed_confirmation_text} {transactions_count}"
     confirmed = require_exact_confirmation(
-      "DELETE TRANSACTIONS",
-      f"delete all transactions of user with email {user_label}",
+      confirmation_text,
+      "delete all transactions of user with email "
+      f"{user_label}.\n"
+      "Calculate the number of transactions yourself and append it to the confirmation text, "
+      "separated by a space\n"
+      f"(transactions: {transactions_count})",
+      displayed_confirmation_text=displayed_confirmation_text,
     )
     if not confirmed:
       return {
         "deleted": False,
         "error": "Deletion cancelled because confirmation text did not match",
         "ownerId": owner_id,
+        "transactions": transactions_count,
       }
 
+    print(f"Deleting all transactions for user {owner_id}...")
     deleted_count = await delete_transactions(db, owner_id)
     return {
       "deleted": True,

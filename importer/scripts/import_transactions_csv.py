@@ -1,6 +1,6 @@
 import argparse
 import asyncio
-from app.services.admin_guard import require_admin_auth
+from app.services.admin_guard import AdminAuthError, require_admin_auth
 from app.services.transaction_service import import_transactions
 
 
@@ -17,7 +17,12 @@ def main():
   )
   args = parser.parse_args()
 
-  require_admin_auth()
+  try:
+    require_admin_auth()
+  except AdminAuthError as err:
+    print(str(err))
+    raise SystemExit(1)
+
   exit_code = asyncio.run(
     import_transactions(args.owner_id, args.csv_path, args.print)
   )

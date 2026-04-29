@@ -15,6 +15,8 @@ async def run_users_list(include_raw: bool, as_json: bool) -> int:
     users = await db.users.find({}).sort("_id", 1).to_list(length=None)
     result = []
 
+    print(f"Calculating transaction and resource counts for {len(users)} users...")
+
     for user in users:
       transactions_count = await db.transactions.count_documents({
         "ownerId": user["_id"]

@@ -191,6 +191,20 @@ Before deleting, it shows the totals and requires the exact confirmation text
 `DELETE ALL UNUSED RESOURCES <sum>`, where you must calculate `<sum>` yourself from the shown
 counts.
 
+### Delete All Empty Users
+
+Run from the `importer/` directory:
+
+```bash
+python -m scripts.delete_all_empty_users
+```
+
+This deletes all users who have zero transactions and zero user-owned `accounts`, `categories`,
+and `paymentMethods`.
+Before deleting, it shows the number of matching users and requires the exact confirmation text
+`DELETE ALL EMPTY USERS <count>`, where you must calculate `<count>` yourself from the shown
+number.
+
 ### Import Transactions
 
 Run from the `importer/` directory:
@@ -227,8 +241,8 @@ This deletes all transactions for the given user.
 
 The delete script also requires the admin token prompt to match
 `LEGACY_IMPORTER_ADMIN_TOKEN`.
-It then requires typing the exact confirmation text `DELETE TRANSACTIONS`, shown together with the
-target user's email when available.
+It then requires typing the exact confirmation text `DELETE TRANSACTIONS <count>`, where you must
+calculate `<count>` yourself from the shown transaction count for the target user.
 
 ## CSV Format
 

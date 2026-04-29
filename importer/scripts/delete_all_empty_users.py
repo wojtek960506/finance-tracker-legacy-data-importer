@@ -2,15 +2,14 @@ import argparse
 import asyncio
 
 from app.services.admin_guard import AdminAuthError, require_admin_auth
-from app.services.user_service import run_delete_user
+from app.services.user_service import run_delete_all_empty_users
 
 
 def main():
   parser = argparse.ArgumentParser(
-    description="Delete a user who has no transactions and no user-owned resources.",
+    description="Delete all users who have no transactions and no user-owned resources.",
   )
-  parser.add_argument("owner_id", help="Mongo ObjectId of the user passed as a string")
-  args = parser.parse_args()
+  parser.parse_args()
 
   try:
     require_admin_auth()
@@ -18,7 +17,7 @@ def main():
     print(str(err))
     raise SystemExit(1)
 
-  exit_code = asyncio.run(run_delete_user(args.owner_id))
+  exit_code = asyncio.run(run_delete_all_empty_users())
   raise SystemExit(exit_code)
 
 

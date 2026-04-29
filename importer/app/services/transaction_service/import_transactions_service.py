@@ -45,6 +45,7 @@ async def import_transactions(
       }, indent=2, default=str))
       return 1
 
+    print(f"Adding {len(valid_docs)} transactions for user {owner_id}...")
     result = await create_transactions(
       db,
       valid_docs,
