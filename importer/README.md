@@ -1,6 +1,6 @@
-CLI tools to import and delete legacy transactions.
+Admin and migration CLI tools for legacy Finance Tracker data.
 
-These are trusted local admin tools. All scripts require the hidden admin token prompt
+These are trusted local admin and migration tools. All scripts require the hidden admin token prompt
 to match `LEGACY_IMPORTER_ADMIN_TOKEN` from `.env`.
 
 Scripts:

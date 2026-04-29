@@ -6,7 +6,7 @@ from app.services.transaction_service import import_transactions
 
 def main():
   parser = argparse.ArgumentParser(
-    description="Import transactions from CSV without running the API server.",
+    description="Import transactions from CSV through the local admin and migration CLI.",
   )
   parser.add_argument("owner_id", help="Mongo ObjectId of the user passed as a string")
   parser.add_argument("csv_path", help="Path to CSV file")

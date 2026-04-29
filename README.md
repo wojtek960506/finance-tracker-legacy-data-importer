@@ -1,12 +1,13 @@
-# Finance Tracker Legacy Data Importer
+# Finance Tracker Legacy Data Tools
 
-Utilities for converting legacy finance spreadsheets into transaction CSV files and importing
-those CSV files into the Finance Tracker database.
+Utilities for converting legacy finance spreadsheets into transaction CSV files and for running
+admin and migration workflows against the Finance Tracker database.
 
 The repository has two parts:
 
 - `parser/` prepares CSV exports from old spreadsheet data.
-- `importer/` validates prepared CSV files and writes transactions directly to MongoDB.
+- `importer/` provides admin and migration CLI tools for validating CSV files, importing
+  transactions, listing users, and cleaning up users or resources in MongoDB.
 
 ## Parser
 
@@ -110,9 +111,13 @@ user-specific resources by the importer.
 
 ## Importer
 
-The importer reads an import-ready CSV file, validates rows with the local Pydantic transaction
-schema, creates missing user-specific resources, inserts transactions, and then resolves
-`source_ref_index` references to real MongoDB transaction IDs.
+The `importer/` directory now acts as a small admin and migration CLI. It can:
+
+- read an import-ready CSV file, validate rows with the local Pydantic transaction schema, create
+  missing user-specific resources, insert transactions, and resolve `source_ref_index`
+  references to real MongoDB transaction IDs;
+- list users with transaction and resource counts;
+- delete transactions, resources, and users through guarded maintenance flows.
 
 ### Setup
 
@@ -145,7 +150,7 @@ python -m scripts.list_users
 ```
 
 This prints a table with user IDs plus transaction and user-owned resource counts, which is useful
-before choosing an `owner_id` for import or delete operations.
+before choosing an `owner_id` for import or cleanup operations.
 
 Use `--json` to print the same compact data as JSON. Use `--include-raw` to include all user
 document fields as JSON.
@@ -278,7 +283,8 @@ Rules:
 
 ## Temporary CSV Samples
 
-`importer/tmp_csv/` contains small sanitized CSV files that can be used for quick importer checks.
+`importer/tmp_csv/` contains small sanitized CSV files that can be used for quick migration-tool
+checks.
 They include examples of normal expenses, `myAccount` transfer references, and `exchange`
 references.
 
@@ -286,5 +292,5 @@ references.
 
 - `parser/data/`, virtual environments, `.env`, `__pycache__/`, and local Codex metadata are ignored by Git.
 - The parser is a local file transformation tool and does not require admin authentication because it does not mutate database state.
-- The importer creates missing category, account, and payment method resources as user-specific resources unless they already exist as user or system resources in MongoDB.
-- Importer scripts are trusted local admin tools. They require `LEGACY_IMPORTER_ADMIN_TOKEN`, but database credentials should still be scoped carefully.
+- Import commands create missing category, account, and payment method resources as user-specific resources unless they already exist as user or system resources in MongoDB.
+- Importer scripts are trusted local admin and migration tools. They require `LEGACY_IMPORTER_ADMIN_TOKEN`, but database credentials should still be scoped carefully.
