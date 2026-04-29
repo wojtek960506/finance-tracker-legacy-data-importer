@@ -164,6 +164,19 @@ This deletes user-owned `accounts`, `categories`, and `paymentMethods` that are 
 any transaction belonging to that user.
 It requires the admin token prompt and then the exact confirmation text `DELETE RESOURCES`.
 
+### Delete User
+
+Run from the `importer/` directory:
+
+```bash
+python -m scripts.delete_user <owner_id>
+```
+
+This deletes a user only when they have no transactions and no user-owned `accounts`,
+`categories`, or `paymentMethods`.
+If any counts are non-zero, the script returns early and prints those counts.
+It requires the admin token prompt and then the exact confirmation text `DELETE USER`.
+
 ### Import Transactions
 
 Run from the `importer/` directory:

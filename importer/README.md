@@ -4,6 +4,7 @@ These are trusted local admin tools. All scripts require the hidden admin token 
 to match `LEGACY_IMPORTER_ADMIN_TOKEN` from `.env`.
 
 Scripts:
+- `scripts.delete_user`: deletes a user only when they have no transactions and no user-owned resources.
 - `scripts.delete_resources`: deletes user-owned named resources not used by any transaction.
 - `scripts.list_users`: lists users in a table with transaction and named resource counts.
 - `scripts.delete_transactions`: deletes all transactions for a user.
@@ -19,6 +20,14 @@ python -m scripts.list_users
 python -m scripts.list_users --json
 python -m scripts.list_users --include-raw
 ```
+
+```bash
+python -m scripts.delete_user <owner_id>
+```
+
+This script requires the admin token prompt and the exact confirmation text `DELETE USER`.
+It returns early with current `transactions`, `accounts`, `categories`, and `paymentMethods`
+counts if the user still owns any of them.
 
 ```bash
 python -m scripts.delete_resources <owner_id>
