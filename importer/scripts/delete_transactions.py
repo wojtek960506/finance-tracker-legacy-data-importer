@@ -3,6 +3,7 @@ import asyncio
 import json
 
 from app.db.client import database_session
+from app.services.admin_guard import require_admin_auth
 from app.services.transaction_service import delete_transactions
 
 
@@ -19,6 +20,7 @@ def main():
   parser.add_argument("owner_id", help="Mongo ObjectId of the user passed as a string")
   args = parser.parse_args()
 
+  require_admin_auth()
   exit_code = asyncio.run(run_transactions_deletion(args.owner_id))
   raise SystemExit(exit_code)
 

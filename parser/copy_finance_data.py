@@ -1,5 +1,25 @@
 import subprocess
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+
+PARSER_DIR = Path(__file__).resolve().parents[0]
+load_dotenv(PARSER_DIR / ".env")
+
+
+def get_legacy_export_prefix() -> str:
+  prefix = os.getenv("LEGACY_FINANCE_EXPORT_PREFIX")
+  if prefix is None or prefix.strip() == "":
+    raise ValueError(
+      "LEGACY_FINANCE_EXPORT_PREFIX has to be set in parser/.env when using --should-copy"
+    )
+  return prefix
+
+
+def get_legacy_export_dir() -> Path:
+  export_dir = os.getenv("LEGACY_FINANCE_EXPORT_DIR", "~/Downloads")
+  return Path(export_dir).expanduser()
 
 
 def execute_copying(path_1: str, path_2: str, should_print: bool):
@@ -18,8 +38,10 @@ def execute_copying(path_1: str, path_2: str, should_print: bool):
 
 
 def copy_original_finance_spreadsheet(name: str, should_print: bool):
-  path_1 = Path(f"~/Downloads/Finanse WZ - {name}.csv").expanduser()
-  path_2 = Path(__file__).resolve().parents[0] / f"data/{name}/finance_raw_{name}.csv"
+  export_prefix = get_legacy_export_prefix()
+  export_dir = get_legacy_export_dir()
+  path_1 = export_dir / f"{export_prefix} - {name}.csv"
+  path_2 = PARSER_DIR / f"data/{name}/finance_raw_{name}.csv"
   execute_copying(path_1, path_2, should_print)
 
 

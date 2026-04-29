@@ -1,5 +1,8 @@
 CLI tools to import and delete legacy transactions.
 
+These are trusted local admin tools. Both mutation scripts require the hidden admin token prompt
+to match `LEGACY_IMPORTER_ADMIN_TOKEN` from `.env`.
+
 Scripts:
 - `scripts.delete_transactions`: deletes all transactions for a user.
 - `scripts.import_transactions_csv`: imports transactions from a CSV file for a user.

@@ -6,8 +6,8 @@ set -e
 # -----------------------------
 # Configuration
 # -----------------------------
-# Parses folder relative to script
-PARSER_DIR="$(dirname "$0")/parser"
+# Parser folder relative to script
+PARSER_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Virtual environment path
 VENV_DIR="$PARSER_DIR/.venv"
@@ -56,7 +56,7 @@ echo "Updating pip ..."
 "$VENV_DIR/bin/python" -m pip install --upgrade pip
 
 echo "Installing dependencies ..."
-"$VENV_DIR/bin/pip" install -r $PARSER_DIR/requirements.txt
+"$VENV_DIR/bin/pip" install -r "$PARSER_DIR/requirements.txt"
 
 # -----------------------------
 # Run the Python script with selected flags

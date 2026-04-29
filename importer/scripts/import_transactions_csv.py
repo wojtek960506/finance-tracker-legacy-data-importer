@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import json
+from app.services.admin_guard import require_admin_auth
 from app.db.client import database_session
 from app.services.csv_service import prepare_transactions_from_csv
 from app.services.transaction_service import (
@@ -64,6 +65,7 @@ def main():
   parser.add_argument("csv_path", help="Path to CSV file")
   args = parser.parse_args()
 
+  require_admin_auth()
   exit_code = asyncio.run(run_transactions_import(args.owner_id, args.csv_path))
   raise SystemExit(exit_code)
 
