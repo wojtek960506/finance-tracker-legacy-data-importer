@@ -136,6 +136,22 @@ LEGACY_IMPORTER_ADMIN_TOKEN=change-me
 Adjust the values for your local database and replace `LEGACY_IMPORTER_ADMIN_TOKEN` with a local
 secret value. Importer scripts use this token as an admin guard before mutating transactions.
 
+### List Users
+
+Run from the `importer/` directory:
+
+```bash
+python -m scripts.list_users
+```
+
+This prints a table with user IDs plus transaction and user-owned resource counts, which is useful
+before choosing an `owner_id` for import or delete operations.
+
+Use `--json` to print the same compact data as JSON. Use `--include-raw` to include all user
+document fields as JSON.
+
+This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKEN`.
+
 ### Import Transactions
 
 Run from the `importer/` directory:
@@ -213,4 +229,4 @@ references.
 - `parser/data/`, virtual environments, `.env`, `__pycache__/`, and local Codex metadata are ignored by Git.
 - The parser is a local file transformation tool and does not require admin authentication because it does not mutate database state.
 - The importer creates missing category, account, and payment method resources as user-specific resources unless they already exist as user or system resources in MongoDB.
-- Import and delete scripts are trusted local admin tools. They require `LEGACY_IMPORTER_ADMIN_TOKEN`, but database credentials should still be scoped carefully.
+- Importer scripts are trusted local admin tools. They require `LEGACY_IMPORTER_ADMIN_TOKEN`, but database credentials should still be scoped carefully.
