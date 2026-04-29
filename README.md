@@ -152,6 +152,17 @@ document fields as JSON.
 
 This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKEN`.
 
+### Delete Unused Resources
+
+Run from the `importer/` directory:
+
+```bash
+python -m scripts.delete_unused_resources <owner_id>
+```
+
+This deletes user-owned `accounts`, `categories`, and `paymentMethods` that are not referenced by
+any transaction belonging to that user.
+
 ### Import Transactions
 
 Run from the `importer/` directory:
