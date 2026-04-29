@@ -177,6 +177,20 @@ This deletes a user only when they have no transactions and no user-owned `accou
 If any counts are non-zero, the script returns early and prints those counts.
 It requires the admin token prompt and then the exact confirmation text `DELETE USER`.
 
+### Delete All Unused Resources
+
+Run from the `importer/` directory:
+
+```bash
+python -m scripts.delete_all_unused_resources
+```
+
+This deletes all user-owned `accounts`, `categories`, and `paymentMethods` for users who have no
+transactions.
+Before deleting, it shows the totals and requires the exact confirmation text
+`DELETE ALL UNUSED RESOURCES <sum>`, where you must calculate `<sum>` yourself from the shown
+counts.
+
 ### Import Transactions
 
 Run from the `importer/` directory:
@@ -190,6 +204,9 @@ Example:
 ```bash
 python -m scripts.import_transactions_csv 665000000000000000000000 ../parser/data/all/finance_all_transfer_refs.csv
 ```
+
+Use `--print` to show resource lookup and creation logs during import. Final success and error
+results are printed regardless of this flag.
 
 The import script refuses to import if:
 

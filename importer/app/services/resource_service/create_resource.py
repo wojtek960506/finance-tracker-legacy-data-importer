@@ -9,6 +9,7 @@ async def create_resource(
   db: Database,
   name: str,
   owner_id: str,
+  should_print: bool = False,
 ):
   if owner_id is None:
     raise ValueError(
@@ -23,7 +24,8 @@ async def create_resource(
   }
   result = await db.collection(resource_enum).insert_one(doc)
 
-  print(f"inserted {resource_enum.field_name} result:", result)
+  if should_print:
+    print(f"inserted {resource_enum.field_name} result:", result)
 
   doc_with_id = dict(doc)
   doc_with_id["_id"] = result.inserted_id

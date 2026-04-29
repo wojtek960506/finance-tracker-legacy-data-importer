@@ -1,60 +1,7 @@
 import argparse
 import asyncio
-import json
 from app.services.admin_guard import require_admin_auth
-from app.db.client import database_session
-from app.services.csv_service import prepare_transactions_from_csv
-from app.services.transaction_service import (
-  create_transactions,
-  serialize_object,
-)
-from app.services.user_service import find_user
-from app.services.transaction_service import count_transactions
-from app.services.resource_service.create_resource_map import create_resource_map
-from app.services.resource_service.resource_enum import ResourceEnum
-  
-
-
-async def run_transactions_import(owner_id: str, csv_file_path: str) -> int:
-  async with database_session() as db:
-    if (await find_user(db, owner_id)) is None:
-      print("User not found")
-      return 1
-
-    if (await count_transactions(db, owner_id)) > 0:
-      print("Cannot import transactions for a user who already has some transactions")
-      return 1
-
-    valid_docs, errors = prepare_transactions_from_csv(csv_file_path, owner_id)
-    categories_map = await create_resource_map(
-      ResourceEnum.CATEGORY, db, owner_id, valid_docs
-    )
-    accounts_map = await create_resource_map(
-      ResourceEnum.ACCOUNT, db, owner_id, valid_docs
-    )
-    paymentMethods_map = await create_resource_map(
-      ResourceEnum.PAYMENT_METHOD, db, owner_id, valid_docs
-    )
-
-    if errors:
-      errors_to_show = list(map(serialize_object, errors[:10]))
-      print(json.dumps({
-        "valid_transactions_count": len(valid_docs),
-        "invalid_transactions_count": len(errors),
-        "first_10_errors": errors_to_show,
-      }, indent=2, default=str))
-      return 1
-
-    result = await create_transactions(
-      db,
-      valid_docs,
-      errors,
-      categories_map,
-      accounts_map,
-      paymentMethods_map,
-    )
-    print(json.dumps(result, indent=2, default=str))
-    return 0
+from app.services.transaction_service import import_transactions
 
 
 def main():
@@ -63,10 +10,17 @@ def main():
   )
   parser.add_argument("owner_id", help="Mongo ObjectId of the user passed as a string")
   parser.add_argument("csv_path", help="Path to CSV file")
+  parser.add_argument(
+    "--print",
+    action="store_true",
+    help="Print resource lookup and creation logs during import.",
+  )
   args = parser.parse_args()
 
   require_admin_auth()
-  exit_code = asyncio.run(run_transactions_import(args.owner_id, args.csv_path))
+  exit_code = asyncio.run(
+    import_transactions(args.owner_id, args.csv_path, args.print)
+  )
   raise SystemExit(exit_code)
 
 
