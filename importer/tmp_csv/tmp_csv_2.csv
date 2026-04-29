@@ -1,0 +1,4 @@
+source_index,date,description,amount,currency,category,payment_method,account,exchange_rate,currencies,transaction_type,source_ref_index
+1,2024-12-12,USD -> EUR,21.08,USD,exchange,bankTransfer,Revolut,1.054,EUR/USD,expense,2
+2,2024-12-12,USD -> EUR,20.0,EUR,exchange,bankTransfer,Revolut,1.054,EUR/USD,income,1
+3,2024-10-18,Meal during trip,28.0,PLN,Food,card,Pekao,,,expense,

@@ -1,0 +1,14 @@
+source_index,date,description,amount,currency,category,payment_method,account,exchange_rate,currencies,transaction_type,source_ref_index
+1,2021-01-02,some dinner,123.45,PLN,Food,card,mBank,,,expense,
+2,2024-10-18,Meal during trip,28.0,PLN,Food,card,Pekao,,,expense,
+3,2024-10-18,Monthly phone bill,70.0,PLN,Utilities,bankTransfer,Pekao,,,expense,
+4,2024-10-19,Transfer from savings account to main account,100.0,PLN,myAccount,bankTransfer,VeloBank,,,expense,11
+5,2024-10-19,Grocery shopping,3.83,PLN,Food,card,VeloBank,,,expense,
+6,2024-10-19,Restaurant meal,44.0,PLN,Food,card,VeloBank,,,expense,
+7,2024-10-19,Snack during trip,16.0,PLN,Food,card,Pekao,,,expense,
+8,2024-10-19,Accommodation during trip,76.0,PLN,Accommodation,card,Pekao,,,expense,
+9,2024-10-20,Public transport ticket,4.0,PLN,Transportation,card,mBank,,,expense,
+10,2024-10-20,Public transport ticket,4.0,PLN,Transportation,card,mBank,,,expense,
+11,2024-10-19,Transfer from savings account to main account,100.0,PLN,myAccount,bankTransfer,VeloBank,,,income,4
+12,2024-12-12,USD -> EUR,21.08,USD,exchange,bankTransfer,Revolut,1.054,EUR/USD,expense,13
+13,2024-12-12,USD -> EUR,20.0,EUR,exchange,bankTransfer,Revolut,1.054,EUR/USD,income,12
