@@ -14,3 +14,5 @@ venv_new
 parser/data/
 
 __pycache__/
+
+.codex
