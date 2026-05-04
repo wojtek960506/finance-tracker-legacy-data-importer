@@ -1,27 +1,45 @@
 # Finance Tracker Legacy Data Tools
 
-Utilities for converting legacy finance spreadsheets into transaction CSV files and for running
-admin and migration workflows against the Finance Tracker database.
+Utilities for turning legacy spreadsheet exports into import-ready transaction CSV files and for
+running local admin/import workflows against the Finance Tracker database.
 
-The repository has two parts:
+## Repository Layout
 
-- `parser/` prepares CSV exports from old spreadsheet data.
-- `importer/` provides admin and migration CLI tools for validating CSV files, importing
-  transactions, listing users, checking suspicious resources, and cleaning up users or
-  resources in MongoDB.
+```text
+src/
+  shared/
+    api/
+    config/
+    db/
+    decorators/
+    utils/
+  transactions/
+    importing/
+    parse/
+    schema/
+    scripts/
+data/
+  transactions/
+    import_samples/
+    parse/
+```
 
-## Parser
+- `src/shared/` contains reusable infrastructure that future domains can share.
+- `src/transactions/parse/` contains the legacy transaction parsing pipeline.
+- `src/transactions/importing/` contains transaction import/admin services and setup docs.
+- `src/transactions/scripts/` contains transaction CLI entrypoints.
+- `data/transactions/parse/` holds parser inputs and generated outputs.
+- `data/transactions/import_samples/` holds small sanitized sample CSV files.
 
-The parser reads raw CSV files exported from the legacy spreadsheet, cleans them, normalizes
-columns, calculates transaction references, and combines everything into import-ready files.
+## Transactions Parser
 
 Raw spreadsheet exports are expected in:
 
 ```text
-parser/data/<name>/finance_raw_<name>.csv
+data/transactions/parse/<name>/finance_raw_<name>.csv
 ```
 
-The parser currently processes these names:
+The parser currently processes:
 
 ```text
 2015 ... 2025
@@ -29,35 +47,16 @@ The parser currently processes these names:
 2025_foreign
 ```
 
-Generated files are written under `parser/data/`, which is ignored by Git.
-Parser inputs and outputs can contain sensitive financial data, so keep real files out of
-commits and treat generated CSVs as private local artifacts.
-
-### Run the Full Parser Pipeline
-
-From the repository root:
+Run the full parser pipeline from the repository root:
 
 ```bash
-./parser/parse_legacy_data.sh
+./src/transactions/parse/parse_legacy_data.sh
+./src/transactions/parse/parse_legacy_data.sh --should-copy
+./src/transactions/parse/parse_legacy_data.sh --should-print
+./src/transactions/parse/parse_legacy_data.sh --should-copy --should-print
 ```
 
-Useful flags:
-
-```bash
-./parser/parse_legacy_data.sh --should-copy
-./parser/parse_legacy_data.sh --should-print
-./parser/parse_legacy_data.sh --should-copy --should-print
-```
-
-`--should-copy` copies files from:
-
-```text
-<LEGACY_FINANCE_EXPORT_DIR>/<LEGACY_FINANCE_EXPORT_PREFIX> - <name>.csv
-```
-
-into the expected `parser/data/<name>/finance_raw_<name>.csv` paths before parsing.
-
-For this option, create `parser/.env`:
+If you use `--should-copy`, create `src/transactions/parse/.env`:
 
 ```env
 LEGACY_FINANCE_EXPORT_PREFIX="Your spreadsheet export prefix"
@@ -66,72 +65,30 @@ LEGACY_FINANCE_EXPORT_DIR="~/Downloads"
 
 `LEGACY_FINANCE_EXPORT_DIR` is optional and defaults to `~/Downloads`.
 
-The shell script creates `parser/.venv` if needed and installs dependencies from
-`parser/requirements.txt`.
-
-### Parser Steps
-
-The full pipeline is defined in `parser/main_get_all.py`:
-
-1. Optionally copy raw spreadsheet exports from the configured export directory.
-2. Parse raw CSV files into per-year expenses and incomes files.
-3. Calculate exchange transaction references.
-4. Collect selector values for review.
-5. Combine all years into aggregate CSV files.
-6. Add references for `myAccount` transfer transactions.
+The shell script creates `src/transactions/parse/.venv` if needed and installs dependencies from
+[`src/transactions/parse/requirements.txt`](/home/wojtek960506/Programming/own_projects/finance-tracker/finance-tracker-legacy-data-importer/src/transactions/parse/requirements.txt).
 
 The final combined file with transfer references is:
 
 ```text
-parser/data/all/finance_all_transfer_refs.csv
+data/transactions/parse/all/finance_all_transfer_refs.csv
 ```
-
-### Selector Normalization
 
 During parsing, only system resource names are normalized to API keys. User-specific resource
 names are preserved.
 
-System categories:
+## Transactions Importing
 
-- `Wymiana -> exchange`
-- `Moje konto -> myAccount`
-
-System payment methods:
-
-- `Bankomat -> atm`
-- `Karta -> card`
-- `Gotówka -> cash`
-- `Przelew -> bankTransfer`
-
-System accounts:
-
-- `Gotówka -> cash`
-
-All other category, payment method, and account values pass through unchanged and are treated as
-user-specific resources by the importer.
-
-## Importer
-
-The `importer/` directory now acts as a small admin and migration CLI. It can:
-
-- read an import-ready CSV file, validate rows with the local Pydantic transaction schema, create
-  missing user-specific resources, insert transactions, and resolve `source_ref_index`
-  references to real MongoDB transaction IDs;
-- list users with transaction and resource counts;
-- delete transactions, resources, and users through guarded maintenance flows.
-
-### Setup
-
-From `importer/`, create and activate a virtual environment, then install dependencies:
+From [`src/transactions/importing`](/home/wojtek960506/Programming/own_projects/finance-tracker/finance-tracker-legacy-data-importer/src/transactions/importing), create and activate a virtual environment, then install dependencies:
 
 ```bash
-cd importer
+cd src/transactions/importing
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Create `importer/.env`:
+Create `src/transactions/importing/.env`:
 
 ```env
 MONGO_URI=mongodb://localhost:27017
@@ -139,136 +96,30 @@ MONGO_DB=finance-tracker
 LEGACY_IMPORTER_ADMIN_TOKEN=change-me
 ```
 
-Adjust the values for your local database and replace `LEGACY_IMPORTER_ADMIN_TOKEN` with a local
-secret value. Importer scripts use this token as an admin guard before mutating transactions.
-
-### List Users
-
-Run from the `importer/` directory:
+Run transaction admin/import scripts from the repository root:
 
 ```bash
-python -m scripts.list_users
+python -m src.transactions.scripts.list_users
+python -m src.transactions.scripts.list_ownerless_resources
+python -m src.transactions.scripts.delete_resources <owner_id>
+python -m src.transactions.scripts.delete_user <owner_id>
+python -m src.transactions.scripts.delete_all_unused_resources
+python -m src.transactions.scripts.delete_all_empty_users
+python -m src.transactions.scripts.delete_transactions <owner_id>
+python -m src.transactions.scripts.import_transactions_csv <owner_id> <csv_file_path>
 ```
 
-This prints a table with user IDs plus transaction and user-owned resource counts, which is useful
-before choosing an `owner_id` for import or cleanup operations.
-
-Use `--json` to print the same compact data as JSON. Use `--include-raw` to include all user
-document fields as JSON.
-
-This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKEN`.
-
-### List Ownerless Resources
-
-Run from the `importer/` directory:
+Example import:
 
 ```bash
-python -m scripts.list_ownerless_resources
+python -m src.transactions.scripts.import_transactions_csv \
+  665000000000000000000000 \
+  data/transactions/parse/all/finance_all_transfer_refs.csv
 ```
 
-This lists suspicious resource documents where `type` is `user` but `ownerId` is missing or
-null. System resources are intentionally excluded because they use `ownerId: null`.
+Use `--print` with the import command to show resource lookup/creation logs.
 
-Use `--json` to print the same compact data as JSON.
-
-This script requires the admin token prompt to match `LEGACY_IMPORTER_ADMIN_TOKEN`.
-
-### Delete Unused Resources
-
-Run from the `importer/` directory:
-
-```bash
-python -m scripts.delete_resources <owner_id>
-```
-
-This deletes user-owned `accounts`, `categories`, and `paymentMethods` that are not referenced by
-any transaction belonging to that user.
-It requires the admin token prompt and then the exact confirmation text `DELETE RESOURCES`.
-
-### Delete User
-
-Run from the `importer/` directory:
-
-```bash
-python -m scripts.delete_user <owner_id>
-```
-
-This deletes a user only when they have no transactions and no user-owned `accounts`,
-`categories`, or `paymentMethods`.
-If any counts are non-zero, the script returns early and prints those counts.
-It requires the admin token prompt and then the exact confirmation text `DELETE USER`.
-
-### Delete All Unused Resources
-
-Run from the `importer/` directory:
-
-```bash
-python -m scripts.delete_all_unused_resources
-```
-
-This deletes all user-owned `accounts`, `categories`, and `paymentMethods` for users who have no
-transactions.
-Before deleting, it shows the totals and requires the exact confirmation text
-`DELETE ALL UNUSED RESOURCES <sum>`, where you must calculate `<sum>` yourself from the shown
-counts.
-
-### Delete All Empty Users
-
-Run from the `importer/` directory:
-
-```bash
-python -m scripts.delete_all_empty_users
-```
-
-This deletes all users who have zero transactions and zero user-owned `accounts`, `categories`,
-and `paymentMethods`.
-Before deleting, it shows the number of matching users and requires the exact confirmation text
-`DELETE ALL EMPTY USERS <count>`, where you must calculate `<count>` yourself from the shown
-number.
-
-### Import Transactions
-
-Run from the `importer/` directory:
-
-```bash
-python -m scripts.import_transactions_csv <owner_id> <csv_file_path>
-```
-
-Example:
-
-```bash
-python -m scripts.import_transactions_csv 665000000000000000000000 ../parser/data/all/finance_all_transfer_refs.csv
-```
-
-Use `--print` to show resource lookup and creation logs during import. Final success and error
-results are printed regardless of this flag.
-
-The import script refuses to import if:
-
-- the admin token prompt does not match `LEGACY_IMPORTER_ADMIN_TOKEN`;
-- the user does not exist;
-- the user already has transactions;
-- any CSV row fails validation.
-
-### Delete Transactions
-
-Run from the `importer/` directory:
-
-```bash
-python -m scripts.delete_transactions <owner_id>
-```
-
-This deletes all transactions for the given user.
-
-The delete script also requires the admin token prompt to match
-`LEGACY_IMPORTER_ADMIN_TOKEN`.
-It then requires typing the exact confirmation text `DELETE TRANSACTIONS <count>`, where you must
-calculate `<count>` yourself from the shown transaction count for the target user.
-
-## CSV Format
-
-The importer expects a header row with these columns. Snake case names are supported, and the
-Pydantic schema also accepts camelCase aliases.
+## Transaction CSV Format
 
 Required columns:
 
@@ -297,16 +148,8 @@ Rules:
 - If a non-exchange transaction has `currencies` or `exchange_rate`, both must be provided together.
 - `source_ref_index` points to another row's `source_index`; after import it is converted to a real transaction reference.
 
-## Temporary CSV Samples
-
-`importer/tmp_csv/` contains small sanitized CSV files that can be used for quick migration-tool
-checks.
-They include examples of normal expenses, `myAccount` transfer references, and `exchange`
-references.
-
 ## Notes
 
-- `parser/data/`, virtual environments, `.env`, `__pycache__/`, and local Codex metadata are ignored by Git.
-- The parser is a local file transformation tool and does not require admin authentication because it does not mutate database state.
+- `data/transactions/parse/`, virtual environments, `.env` files, `__pycache__/`, and local Codex metadata are ignored by Git.
+- The parser is local-only and does not require admin authentication because it does not mutate database state.
 - Import commands create missing category, account, and payment method resources as user-specific resources unless they already exist as user or system resources in MongoDB.
-- Importer scripts are trusted local admin and migration tools. They require `LEGACY_IMPORTER_ADMIN_TOKEN`, but database credentials should still be scoped carefully.
