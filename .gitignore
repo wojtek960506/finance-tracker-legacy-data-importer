@@ -12,6 +12,7 @@ coverage/
 venv_new
 
 data/transactions/parse/
+data/vehicles/parse/
 
 **/__pycache__/
 
