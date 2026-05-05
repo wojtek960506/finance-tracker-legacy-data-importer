@@ -66,7 +66,13 @@ def clean_text(value: str | None) -> str:
 
 
 def is_data_row(row: list[str]) -> bool:
-  return len(row) >= 3 and clean_text(row[0]).isdigit() and len(clean_text(row[0])) == 4
+  return (
+    len(row) >= 3
+    and clean_text(row[0]).isdigit()
+    and len(clean_text(row[0])) == 4
+    and clean_text(row[1]).isdigit()
+    and clean_text(row[2]).isdigit()
+  )
 
 
 def parse_float(value: str | None) -> float | None:
@@ -112,6 +118,25 @@ def get_cell(row: list[str], index: int) -> str:
   if index < len(row):
     return row[index]
   return ""
+
+
+def row_is_blank(row: list[str], start: int, end: int) -> bool:
+  return not any(clean_text(get_cell(row, index)) for index in range(start, end + 1))
+
+
+def is_year_label(value: str | None) -> bool:
+  cleaned = clean_text(value)
+  return cleaned.isdigit() and len(cleaned) == 4
+
+
+def is_summary_year_label(value: str | None) -> bool:
+  cleaned = clean_text(value)
+  if not cleaned:
+    return False
+  if "/" in cleaned:
+    left, right = cleaned.split("/", 1)
+    return left.isdigit() and right.isdigit()
+  return cleaned.isdigit()
 
 
 def extract_main_table(rows: list[list[str]]) -> list[dict]:
@@ -183,37 +208,67 @@ def extract_stats_table(rows: list[list[str]]) -> list[dict]:
   overall_label_row = 4
   overall_values_row = 5
 
-  if clean_text(get_cell(rows[overall_label_row - 1], 20)).upper() == "CAŁKOWITE":
+  if (
+    len(rows) >= overall_values_row
+    and clean_text(get_cell(rows[overall_label_row - 1], 20)).upper() == "CAŁKOWITE"
+  ):
     extracted_rows.append(
       build_stats_row("overall", None, overall_values_row, rows[overall_values_row - 1])
     )
 
-  for label_row in range(6, 17, 2):
+  label_row = 6
+  while label_row <= len(rows):
     value_row = label_row + 1
+    if value_row > len(rows):
+      break
+
     year_text = clean_text(get_cell(rows[label_row - 1], 20))
     if not year_text:
+      if row_is_blank(rows[label_row - 1], 20, 30):
+        break
+      label_row += 1
+      continue
+
+    if not is_year_label(year_text):
+      label_row += 1
       continue
 
     extracted_rows.append(
       build_stats_row("year", int(year_text), value_row, rows[value_row - 1])
     )
+    label_row += 2
 
   return extracted_rows
 
 
 def extract_yearly_distance_summary(rows: list[list[str]]) -> list[dict]:
   extracted_rows: list[dict] = []
+  header_row_index = None
 
-  for row_index in range(24, 29):
+  for row_index, row in enumerate(rows, start=1):
+    if clean_text(get_cell(row, 20)) == "Rok" and clean_text(get_cell(row, 21)) == "Początek":
+      header_row_index = row_index
+      break
+
+  if header_row_index is None:
+    return extracted_rows
+
+  row_index = header_row_index + 1
+  while row_index <= len(rows):
     row = rows[row_index - 1]
+    year_label = clean_text(get_cell(row, 20))
+    if not year_label or not is_summary_year_label(year_label):
+      break
+
     extracted_rows.append({
       "source_row": row_index,
-      "year": parse_int(get_cell(row, 20)),
+      "year": year_label,
       "start_odometer_km": parse_int(get_cell(row, 21)),
       "end_odometer_km": parse_int(get_cell(row, 22)),
       "total_distance_km": parse_int(get_cell(row, 23)),
       "description": clean_text(get_cell(row, 24)) or None,
     })
+    row_index += 1
 
   return extracted_rows
 
@@ -221,16 +276,16 @@ def extract_yearly_distance_summary(rows: list[list[str]]) -> list[dict]:
 def extract_cross_sheet_totals(rows: list[list[str]]) -> list[dict]:
   extracted_rows: list[dict] = []
 
-  for row_index in range(6, 11):
-    row = rows[row_index - 1]
+  for row_index, row in enumerate(rows, start=1):
     metric_name = clean_text(get_cell(row, 34))
-    if not metric_name:
+    metric_value = clean_text(get_cell(row, 35))
+    if not metric_name or not metric_value:
       continue
 
     extracted_rows.append({
       "source_row": row_index,
       "metric_name": metric_name,
-      "metric_value_pln": parse_float(get_cell(row, 35)),
+      "metric_value_pln": parse_float(metric_value),
     })
 
   return extracted_rows
@@ -243,22 +298,8 @@ def write_csv(path: Path, headers: list[str], rows: list[dict]) -> None:
     writer.writerows(rows)
 
 
-def main() -> None:
-  parser = argparse.ArgumentParser(
-    description="Extract the four embedded tables from a fuel spreadsheet CSV export.",
-  )
-  parser.add_argument("csv_path", help="Path to the mixed fuel CSV export")
-  parser.add_argument(
-    "--output-dir",
-    default="data/vehicles/parse/car_2005/fuel_tables",
-    help="Directory where the extracted CSV files will be written",
-  )
-  args = parser.parse_args()
-
-  csv_path = Path(args.csv_path)
-  output_dir = Path(args.output_dir)
+def run(csv_path: Path, output_dir: Path) -> None:
   output_dir.mkdir(parents=True, exist_ok=True)
-
   rows = read_rows(csv_path)
 
   write_csv(output_dir / "fuel_entries.csv", MAIN_TABLE_HEADERS, extract_main_table(rows))
@@ -269,10 +310,26 @@ def main() -> None:
     extract_yearly_distance_summary(rows),
   )
   write_csv(
-    output_dir / "car_cost_totals.csv",
+    output_dir / "cost_total.csv",
     CROSS_SHEET_HEADERS,
     extract_cross_sheet_totals(rows),
   )
+
+
+def main() -> None:
+  parser = argparse.ArgumentParser(
+    description="Extract the four embedded tables from a fuel spreadsheet CSV export.",
+  )
+  parser.add_argument("csv_path", help="Path to the mixed fuel CSV export")
+  parser.add_argument(
+    "--output-dir",
+    help="Directory where the extracted CSV files will be written",
+  )
+  args = parser.parse_args()
+
+  csv_path = Path(args.csv_path)
+  output_dir = Path(args.output_dir) if args.output_dir else csv_path.parent / "fuel_tables"
+  run(csv_path, output_dir)
 
 
 if __name__ == "__main__":
